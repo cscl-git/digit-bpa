@@ -62,6 +62,11 @@
 </div>
 <div class="panel-body form-group display-hide" id="boundarydivision" >
 </div>
+
+<input type="hidden" id="planBoundaryType" value="" />
+<input type="hidden" id="planZoneOrLocation" value="" />
+<input type="hidden" id="planSectorOrVillage" value="" />
+
 <script id="genericBoundry" data-search="${param.boundaryData}"
 	src="<cdn:url value='/resources/js/commonjs/genericBoundaryForm.js?rnd=${app_release_no}'/>"></script>
 

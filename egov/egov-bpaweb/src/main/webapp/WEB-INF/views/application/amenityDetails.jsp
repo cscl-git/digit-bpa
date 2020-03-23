@@ -45,11 +45,11 @@
 
 
 	<div class="form-group">
-		<label class="col-sm-3 control-label text-right extentOfLand"><spring:message
-				code="lbl.extent.of.land" /> <span class="mandatory"></span> </label>
-		<label class="col-sm-3 control-label text-right areaOfBase"><spring:message
-				code="lbl.area.base" /> <span class="mandatory"></span> </label>
-		<div class="col-sm-3 add-margin">
+		<%-- <label class="col-sm-3 control-label text-right extentOfLand" style="display: none;"><spring:message
+				code="lbl.extent.of.land" /> <span class="mandatory"></span> </label> --%>
+		<%-- <label class="col-sm-3 control-label text-right areaOfBase" style="display: none;"><spring:message
+				code="lbl.area.base" /> <span class="mandatory"></span> </label> --%>
+		<div class="col-sm-3 add-margin" style="display: none;">
 			<form:input
 				class="form-control patternvalidation for-calculation dcr-calculation decimalfixed nonzero clear-values"
 				maxlength="10" data-pattern="decimalvalue" id="extentOfLand"
@@ -65,7 +65,7 @@
 			<form:errors path="siteDetail[0].unitOfMeasurement"
 				cssClass="add-margin error-msg" />
 		</div>
-		<label class="col-sm-2 control-label text-right"><spring:message
+		<label class="col-sm-3 control-label text-right"><spring:message
 				code="lbl.extentin.sqmts" /></label>
 		<div class="col-sm-3 add-margin">
 			<form:hidden id="extentinsqmtshdn" path="siteDetail[0].extentinsqmts" />

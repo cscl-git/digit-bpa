@@ -42,36 +42,9 @@ package org.egov.bpa.transaction.service;
 
 import static org.egov.bpa.utils.BpaConstants.ADDING_OF_EXTENSION;
 import static org.egov.bpa.utils.BpaConstants.ALTERATION;
-import static org.egov.bpa.utils.BpaConstants.APARTMENT_FLAT;
-import static org.egov.bpa.utils.BpaConstants.BPA_ADDITIONAL_FEE;
-import static org.egov.bpa.utils.BpaConstants.BPA_COMPOUND_FEE;
-import static org.egov.bpa.utils.BpaConstants.BPA_DEMOLITION_FEE;
-import static org.egov.bpa.utils.BpaConstants.BPA_LAND_DEVELOPMENT_CHARGES;
-import static org.egov.bpa.utils.BpaConstants.BPA_PERMIT_FEE;
-import static org.egov.bpa.utils.BpaConstants.BPA_WELL_FEE;
-import static org.egov.bpa.utils.BpaConstants.CHANGE_IN_OCCUPANCY;
-import static org.egov.bpa.utils.BpaConstants.COMPOUND_WALL;
-import static org.egov.bpa.utils.BpaConstants.DEMOLITION;
-import static org.egov.bpa.utils.BpaConstants.DIVISION_OF_PLOT;
-import static org.egov.bpa.utils.BpaConstants.INDUSTRIAL;
-import static org.egov.bpa.utils.BpaConstants.LABOURCESS;
-import static org.egov.bpa.utils.BpaConstants.LOWRISK;
-import static org.egov.bpa.utils.BpaConstants.MERCANTILE_COMMERCIAL;
 import static org.egov.bpa.utils.BpaConstants.NEW_CONSTRUCTION;
-import static org.egov.bpa.utils.BpaConstants.PERM_FOR_HUT_OR_SHED;
-import static org.egov.bpa.utils.BpaConstants.POLE_CONSTRUCTION_FEE;
-import static org.egov.bpa.utils.BpaConstants.POLE_STRUCTURES;
 import static org.egov.bpa.utils.BpaConstants.RECONSTRUCTION;
-import static org.egov.bpa.utils.BpaConstants.RESIDENTIAL;
-import static org.egov.bpa.utils.BpaConstants.ROOF_CNVRSN_FEE;
-import static org.egov.bpa.utils.BpaConstants.ROOF_CONVERSION;
-import static org.egov.bpa.utils.BpaConstants.SHELTERFUND;
-import static org.egov.bpa.utils.BpaConstants.SHTR_DOOR_FEE;
-import static org.egov.bpa.utils.BpaConstants.SHUTTER_DOOR_CONVERSION;
-import static org.egov.bpa.utils.BpaConstants.THATCHED_TILED_HOUSE;
-import static org.egov.bpa.utils.BpaConstants.TOWER_CONSTRUCTION;
-import static org.egov.bpa.utils.BpaConstants.TOWER_CONSTRUCTION_FEE;
-import static org.egov.bpa.utils.BpaConstants.WELL;
+import static org.egov.bpa.utils.BpaConstants.LOWRISK;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -83,20 +56,14 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Optional;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-import org.egov.bpa.master.entity.ApplicationSubType;
-import org.egov.bpa.master.entity.BpaFee;
-import org.egov.bpa.master.entity.BpaFeeDetail;
 import org.egov.bpa.master.entity.BpaFeeMapping;
 import org.egov.bpa.master.entity.ServiceType;
-import org.egov.bpa.master.entity.enums.FeeSubType;
-import org.egov.bpa.master.service.ApplicationSubTypeService;
 import org.egov.bpa.master.service.BpaFeeMappingService;
-import org.egov.bpa.master.service.ServiceTypeService;
 import org.egov.bpa.transaction.entity.ApplicationFee;
 import org.egov.bpa.transaction.entity.ApplicationFeeDetail;
 import org.egov.bpa.transaction.entity.ApplicationFloorDetail;
@@ -107,11 +74,14 @@ import org.egov.bpa.transaction.entity.ExistingBuildingFloorDetail;
 import org.egov.bpa.transaction.entity.PermitFee;
 import org.egov.bpa.transaction.service.collection.BpaDemandService;
 import org.egov.bpa.utils.BpaConstants;
-import org.egov.common.entity.bpa.Occupancy;
 import org.egov.common.entity.bpa.SubOccupancy;
+import org.egov.common.entity.edcr.Block;
+import org.egov.common.entity.edcr.Building;
+import org.egov.common.entity.edcr.Floor;
+import org.egov.common.entity.edcr.OccupancyTypeHelper;
+import org.egov.common.entity.edcr.Plan;
 import org.egov.commons.Installment;
 import org.egov.commons.dao.InstallmentDao;
-import org.egov.commons.service.SubOccupancyService;
 import org.egov.demand.model.EgDemand;
 import org.egov.demand.model.EgDemandDetails;
 import org.egov.demand.model.EgDemandReason;
@@ -126,30 +96,24 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @Transactional(readOnly = true)
 public class PermitFeeCalculationService implements ApplicationBpaFeeCalculation {
-	 private static final String RESIDENTIAL_DESC = "Residential";
-	    private static final String OTHERS = "Others";
-	    private static final BigDecimal ONE_HUNDRED_FIFTY = BigDecimal.valueOf(150);
-	    private static final BigDecimal THREE_HUNDRED = BigDecimal.valueOf(300);
-	    private static final BigDecimal FIFTY = BigDecimal.valueOf(50);
-	    private static final BigDecimal TEN = BigDecimal.valueOf(10);
-	    private static final BigDecimal HUNDRED = BigDecimal.valueOf(100);
-
-	    /*
-	     * private static final String OCCUPANCY_A1 = "Residential"; private static final String OCCUPANCY_A2 = "Special Residential";
-	     * private static final String OCCUPANCY_A5 = "Professional Office"; private static final String OCCUPANCY_B1 = "Educational";
-	     * private static final String OCCUPANCY_B2 = "Educational HighSchool"; private static final String OCCUPANCY_B3 =
-	     * "Higher Educational Institute"; private static final String OCCUPANCY_C = "Medical/Hospital"; private static final String
-	     * OCCUPANCY_C1 = "Medical IP"; private static final String OCCUPANCY_C2 = "Medical OP"; private static final String
-	     * OCCUPANCY_C3 = "Medical Admin"; private static final String OCCUPANCY_D = "Assembly"; private static final String
-	     * OCCUPANCY_D1 = "Assembly Worship"; private static final String OCCUPANCY_D2 = "Bus Terminal"; private static final String
-	     * OCCUPANCY_E = "Office/Business"; private static final String OCCUPANCY_F = "Mercantile / Commercial"; private static final
-	     * String OCCUPANCY_H = "Storage"; private static final String OCCUPANCY_A4 = "Apartment/Flat";
-	     */
+		private static final BigDecimal TEN = BigDecimal.valueOf(10);
+		private static final BigDecimal TWENTY = BigDecimal.valueOf(20);
+		private static final BigDecimal THIRTY = BigDecimal.valueOf(30);
+		private static final BigDecimal HUNDRED = BigDecimal.valueOf(100);
+	    private static final BigDecimal TEN_LAKH = BigDecimal.valueOf(1000000);
+	    private static final BigDecimal FIFTEEN_HUNDRED = BigDecimal.valueOf(1500);
+	    private static final BigDecimal TWENTY_FIVE_HUNDRED = BigDecimal.valueOf(2500);
+	    private static final BigDecimal THOUSAND = BigDecimal.valueOf(1000);
+	    private static final BigDecimal TEN_THOUSAND = BigDecimal.valueOf(10000);
+	    private static final BigDecimal FIVE_THOUSAND = BigDecimal.valueOf(5000);
+	    private static final BigDecimal ONE_TWO_FIVE = BigDecimal.valueOf(1.25);
+	    private static final BigDecimal TWO_FIVE = BigDecimal.valueOf(2.5);
+	    private static final BigDecimal EIGHTEEN = BigDecimal.valueOf(18);
+	    private static final BigDecimal SQMT_SQFT_MULTIPLIER = BigDecimal.valueOf(10.764);
+	    private static final BigDecimal HALF_ACRE_IN_SQMT = BigDecimal.valueOf(2023.43);
 
 	    @Autowired
 	    private PermitFeeService permitFeeService;
-	    @Autowired
-	    private SubOccupancyService subOccupancyService;
 		@Autowired
 		private BpaFeeMappingService bpaFeeMappingService;
 		@Autowired
@@ -159,42 +123,29 @@ public class PermitFeeCalculationService implements ApplicationBpaFeeCalculation
         @Autowired
 		private InstallmentDao installmentDao;
 		@Autowired
-		private ModuleService moduleService;	
+		private ModuleService moduleService;
 		@Autowired
-		private ApplicationSubTypeService applicationSubTypeService;
-		@Autowired
-		private ServiceTypeService serviceTypeService;
-		@Autowired
-		private ApplicationFeeService applicationFeeService;
-		
-		
+		private ApplicationFeeService applicationFeeService;		
 	    
 	    @Override
-	    public BigDecimal calculateAdmissionFeeAmount(List<Long> serviceTypeIds, Long applicationTypeId) {
+	    public BigDecimal calculateAdmissionFeeAmount(Long applicationTypeId, String edcrNo) {
 	    	BigDecimal amount = BigDecimal.ZERO;
-	    	List<ApplicationSubType> riskBasedAppTypes = applicationSubTypeService.getRiskBasedApplicationTypes();
-	    	List<Long> ids = riskBasedAppTypes.stream().map(rs -> rs.getId()).collect(Collectors.toList());
-	    	if(applicationTypeId!=null && ids.contains(applicationTypeId)) {
-	    	List<ServiceType> mainServiceTypes = serviceTypeService.getAllActiveMainServiceTypes();
-	    	ServiceType serviceType =			mainServiceTypes.stream()
-	    		            .filter(st -> serviceTypeIds.contains(st.getId())) .collect(Collectors.toList()).get(0);
-	    	List<BpaFeeMapping> appSubTypeFee = bpaFeeMappingService.getAppSubTypeFee(serviceType.getId(), FeeSubType.APPLICATION_FEE, applicationTypeId);
-	    	for (final BpaFeeMapping feeMap : appSubTypeFee)
-	    		amount = amount.add(BigDecimal.valueOf(feeMap.getAmount()));
-	    	}
-	    	else {
-	    		amount = applicationBpaService.getTotalFeeAmountByPassingServiceTypeAndAmenities(serviceTypeIds);
+	    	if (null!=edcrNo && !"".equals(edcrNo)) {	    		
+	    		Plan plan = applicationBpaService.getPlanInfo(edcrNo);	    		
+	    		if(null!=plan) {
+	    			OccupancyTypeHelper mostRestrictiveFarHelper = plan.getVirtualBuilding() != null
+							? plan.getVirtualBuilding().getMostRestrictiveFarHelper()
+							: null;
+					amount = amount.add(getTotalSecurityFee(plan, mostRestrictiveFarHelper));
+	    		}
 	    	}
 	    	return amount;
 	    }
 	    
 	    @Override
 	    public BigDecimal setAdmissionFeeAmount(final BpaApplication application, List<ServiceType> amenityList) {
-		    List<Long> amenityIds = amenityList.stream().map(al -> al.getId()).collect(Collectors.toList());
-		    amenityIds.add(application.getServiceType().getId());
-		    return calculateAdmissionFeeAmount(amenityIds,application.getApplicationType().getId());
-	    }
-	    
+		    return calculateAdmissionFeeAmount(application.getApplicationType().getId(), application.geteDcrNumber());
+	    }	    
 	    
 	    protected PermitFee getbpaFee(final BpaApplication application) {
 	        PermitFee permitFee = null;
@@ -232,385 +183,89 @@ public class PermitFeeCalculationService implements ApplicationBpaFeeCalculation
 
 	        return permitFee;
 	    }
-
 	    
-	    //calculate fee based on city grade , height and built up area
-	    public void calculateFeeByCityGrade(final BpaApplication application, final List<Long> serviceTypeList,
-	            final PermitFee permitFee) {	    	
-	    	
-	        if (application != null) {
-	            for (Long serviceTypeId : serviceTypeList) {
-
-	                BigDecimal beyondPermissibleArea = BigDecimal.ZERO;
-
-	                // RESTRICT TO FEW SERVICES
-	                if (!application.getBuildingDetail().isEmpty() && !application.getPermitOccupancies().isEmpty()
-	                        && !application.getSiteDetail().isEmpty()
-	                        && application.getSiteDetail().get(0).getExtentinsqmts() != null) {
-	                    beyondPermissibleArea = calculateBuiltUpAreaForAdditionalFeeCalculation(application).setScale(2,
-	                            BigDecimal.ROUND_HALF_UP);
-	                }                
-	                
-	                
-	                for (BpaFeeMapping bpaFee : bpaFeeMappingService.getPermitFeesByAppType(application, serviceTypeId)) {
-	                    if (bpaFee != null) {
-	                        BigDecimal amount = BigDecimal.ZERO;
-	                            BigDecimal inputArea = getBuiltUpInputUnitForEachServiceType(application,
-	                                    bpaFee.getServiceType().getCode());
-	                            List<Occupancy> selectdOccupancies = application.getPermitOccupancies();
-	                           
-
-	                            if (BpaConstants.BPA_PERMIT_FEE.equals(bpaFee.getBpaFeeCommon().getName())
-										&& ((bpaFee.getServiceType().getDescription().equalsIgnoreCase(NEW_CONSTRUCTION))
-												|| (bpaFee.getServiceType().getDescription()
-														.equalsIgnoreCase(RECONSTRUCTION))
-												|| (bpaFee.getServiceType().getDescription().equalsIgnoreCase(ALTERATION))
-												|| (bpaFee.getServiceType().getDescription()
-														.equalsIgnoreCase(ADDING_OF_EXTENSION))
-												|| (bpaFee.getServiceType().getDescription()
-														.equalsIgnoreCase(CHANGE_IN_OCCUPANCY)))) {
-	                                if (selectdOccupancies.size() > 1 ) {
-	                                    List<SubOccupancy> occupancies = subOccupancyService.findAllOrderByOrderNumber();
-	                                    Map<String, Map<Occupancy, BigDecimal>> convertedOccupancies = new ConcurrentHashMap<>();
-	                                    for (Map.Entry<String, Map<SubOccupancy, BigDecimal>> block : groupBlockOccupancyBuiltUpArea(
-	                                            application.getBuildingDetail()).entrySet()) {
-	                                        for (Map.Entry<SubOccupancy, BigDecimal> blockOccupancy : block.getValue()
-	                                                .entrySet()) {
-	                                            Map<Occupancy, BigDecimal> convertInner;
-	                                            String convertedOccu = getOccupancyAsPerFloorArea(blockOccupancy.getKey(),
-	                                                    blockOccupancy.getValue());
-	                                            Optional<SubOccupancy> subOccp = occupancies.stream()
-	                                                    .filter(o -> o.getCode().equals(convertedOccu)).findFirst();
-	                                            Occupancy occp = null;
-	                                            if(subOccp.isPresent())
-	                                                occp = subOccp.get().getOccupancy();
-	                                            if(occp != null) {
-	                                                if (convertedOccupancies.containsKey(block.getKey())) {
-	                                                    Map<Occupancy, BigDecimal> existOccupancyMap = convertedOccupancies
-	                                                            .get(block.getKey());
-	                                                    if (existOccupancyMap.containsKey(occp)) {
-	                                                        existOccupancyMap.put(occp, existOccupancyMap.get(occp)
-	                                                                .add(blockOccupancy.getValue()));
-	                                                        convertedOccupancies.put(block.getKey(), existOccupancyMap);
-	                                                    } else {
-	                                                        convertInner = new ConcurrentHashMap<>();
-	                                                        convertInner.put(occp, blockOccupancy.getValue());
-	                                                        convertedOccupancies.get(block.getKey()).putAll(convertInner);
-	                                                    }
-	                                                } else {
-	                                                    convertInner = new ConcurrentHashMap<>();
-	                                                    convertInner.put(occp, blockOccupancy.getValue());
-	                                                    convertedOccupancies.put(block.getKey(), convertInner);
-	                                                }
-	                                            }
-	                                        }
-	                                    }
-	                                    for (Map.Entry<String, Map<Occupancy, BigDecimal>> blockOccupancyFloorAreas : convertedOccupancies
-	                                            .entrySet()) {
-	                                        for (Map.Entry<Occupancy, BigDecimal> occupancyWiseArea : blockOccupancyFloorAreas
-	                                                .getValue().entrySet()) {                                        
-	                                            
-	                                            
-	                                            amount = amount
-	                                                    .add(calculatePermitFee(occupancyWiseArea.getValue(), BigDecimal.valueOf(bpaFee.getAmount()), false));
-	                                        }
-	                                    }
-	                                } else {
-	                                    amount = calculatePermitFee(inputArea, BigDecimal.valueOf(bpaFee.getAmount()), application.getSiteDetail().get(0).getCharitableTrustBuilding());
-	                                }
-	                                }
-	                                
-	                            else if (BPA_ADDITIONAL_FEE.equals(bpaFee.getBpaFeeCommon().getName())
-										&& ((bpaFee.getServiceType().getDescription().equalsIgnoreCase(NEW_CONSTRUCTION))
-												|| (bpaFee.getServiceType().getDescription()
-														.equalsIgnoreCase(RECONSTRUCTION))
-												|| (bpaFee.getServiceType().getDescription().equalsIgnoreCase(ALTERATION))
-												|| (bpaFee.getServiceType().getDescription()
-														.equalsIgnoreCase(ADDING_OF_EXTENSION))
-												|| (bpaFee.getServiceType().getDescription()
-														.equalsIgnoreCase(CHANGE_IN_OCCUPANCY)))) {
-	                               
-	                                if (beyondPermissibleArea.compareTo(BigDecimal.ZERO) > 0) {
-	                                    amount = calculateAdditionalFee(beyondPermissibleArea, BigDecimal.valueOf(bpaFee.getAmount()));
-	                                }
-
-	                            }  else if (BPA_DEMOLITION_FEE.equals(bpaFee.getBpaFeeCommon().getName())
-										&& (bpaFee.getServiceType().getDescription().equalsIgnoreCase(DEMOLITION)))
-									amount = calculateDemolitionFee(inputArea, BigDecimal.valueOf(bpaFee.getAmount()));
-								else if (BPA_LAND_DEVELOPMENT_CHARGES.equals(bpaFee.getBpaFeeCommon().getName())
-										&& (bpaFee.getServiceType().getDescription().equalsIgnoreCase(DIVISION_OF_PLOT)))
-									amount = calculateLandDevelopmentCharges(inputArea, BigDecimal.valueOf(bpaFee.getAmount()));
-								else if (BPA_PERMIT_FEE.equals(bpaFee.getBpaFeeCommon().getName()) && (bpaFee
-										.getServiceType().getDescription().equalsIgnoreCase(PERM_FOR_HUT_OR_SHED))) {
-									amount = calculatePermitFeeForHut(inputArea, BigDecimal.valueOf(bpaFee.getAmount()));
-								} else if (BPA_WELL_FEE.equals(bpaFee.getBpaFeeCommon().getName())
-										&& (bpaFee.getServiceType().getDescription().equalsIgnoreCase(WELL)))
-									amount = calculateChargesForWell(inputArea, BigDecimal.valueOf(bpaFee.getAmount()));
-								else if (BPA_COMPOUND_FEE.equals(bpaFee.getBpaFeeCommon().getName())
-										&& (bpaFee.getServiceType().getDescription().equalsIgnoreCase(COMPOUND_WALL)))
-									amount = calculateChargesForCompoundWall(inputArea, BigDecimal.valueOf(bpaFee.getAmount()));
-								else if (SHTR_DOOR_FEE.equals(bpaFee.getBpaFeeCommon().getName()) && (bpaFee
-										.getServiceType().getDescription().equalsIgnoreCase(SHUTTER_DOOR_CONVERSION)))
-									amount = calculateShutterDoorConversionCharges(inputArea, BigDecimal.valueOf(bpaFee.getAmount()));
-								else if (ROOF_CNVRSN_FEE.equals(bpaFee.getBpaFeeCommon().getName())
-										&& (bpaFee.getServiceType().getDescription().equalsIgnoreCase(ROOF_CONVERSION)))
-									amount = calculateRoofConversionCharges(inputArea, BigDecimal.valueOf(bpaFee.getAmount()));
-								else if (TOWER_CONSTRUCTION_FEE.equals(bpaFee.getBpaFeeCommon().getName())
-										&& (bpaFee.getServiceType().getDescription().equalsIgnoreCase(TOWER_CONSTRUCTION)))
-									amount = calculateTowerConstructionCharges(inputArea, BigDecimal.valueOf(bpaFee.getAmount()));
-								else if (POLE_CONSTRUCTION_FEE.equals(bpaFee.getBpaFeeCommon().getName())
-										&& (bpaFee.getServiceType().getDescription().equalsIgnoreCase(POLE_STRUCTURES)))
-									amount = calculatePoleStructureConstructionCharges(inputArea, BigDecimal.valueOf(bpaFee.getAmount()));
+	    public void calculateFeeByCityGrade(final BpaApplication application, final List<Long> serviceTypeList, final PermitFee permitFee) {
+	    	if (application != null) {	    		
+	    		Plan plan = applicationBpaService.getPlanInfo(application.geteDcrNumber());	    		
+	    		if(null!=plan) {
+	    			OccupancyTypeHelper mostRestrictiveFarHelper = plan.getVirtualBuilding() != null
+							? plan.getVirtualBuilding().getMostRestrictiveFarHelper()
+							: null;
 							
-	                        if (SHELTERFUND.equals(bpaFee.getBpaFeeCommon().getName())
-									&& inputArea.compareTo(BigDecimal.valueOf(500)) > 0
-									&& inputArea.compareTo(BigDecimal.valueOf(4000)) < 0
-									&& !application.getSiteDetail().get(0).getAffordableHousingScheme()) {
-	                        	amount = calculateShelterFundAmount(inputArea, BigDecimal.valueOf(bpaFee.getAmount()));
-	                        }
-	                        if(LABOURCESS.equals(bpaFee.getBpaFeeCommon().getName()) && application.getConstructionCost() != null) {
-	                        	amount = calculateLabourCessAmount(application.getConstructionCost());
-	                        }
-	                        
-	                        if(BpaConstants.DEV_PERMIT_FEE.equals(bpaFee.getBpaFeeCommon().getCode()) && application.getBuildingDetail().size() > 1) {
-	                        	amount = BigDecimal.valueOf(bpaFee.getAmount());
-	                        }
-	                        
-	                        if (checkIsWorkAlreadyStarted(application)) {
-	                            amount = amount.multiply(BigDecimal.valueOf(3));
-	                        }
-	                        permitFee.getApplicationFee()
-	                                .addApplicationFeeDetail(
-	                                        buildApplicationFeeDetail(bpaFee, permitFee.getApplicationFee(), amount));
-	                    }
-	                }
-	            }
-	        }
-	    }
-	    
-	    /**
-	     * @param application
-	     * @param serviceTypeList
-	     * @param applicationFee
-	     */
-
-	    public void calculateFeeByServiceType(final BpaApplication application, final List<Long> serviceTypeList,
-	            final PermitFee permitFee) {
-	        if (application != null) {
-	            for (Long serviceTypeId : serviceTypeList) {
-
-	                BigDecimal beyondPermissibleArea = BigDecimal.ZERO;
-
-	                // RESTRICT TO FEW SERVICES
-	                if (!application.getBuildingDetail().isEmpty() && !application.getPermitOccupancies().isEmpty()
-	                        && !application.getSiteDetail().isEmpty()
-	                        && application.getSiteDetail().get(0).getExtentinsqmts() != null) {
-	                    beyondPermissibleArea = calculateAreaForAdditionalFeeCalculation(application).setScale(2,
-	                            BigDecimal.ROUND_HALF_UP);
-	                }
-	                for (BpaFeeMapping bpaFee : bpaFeeMappingService.getSanctionFeeForListOfServices(serviceTypeId)) {
-	                    if (bpaFee != null) {
-	                        BigDecimal amount = BigDecimal.ZERO;
-	                        if (!application.getIsEconomicallyWeakerSection()) {// In
-	                                                                            // case
-	                                                                            // of
-	                                                                            // economically
-	                                                                            // weaker
-	                                                                            // section,
-	                                                                            // amount
-	                                                                            // will
-	                            // be zero.
-	                            String occupancy;
-	                            BigDecimal inputArea = getInputUnitForEachServiceType(application,
-	                                    bpaFee.getServiceType().getCode());
-	                            List<Occupancy> selectdOccupancies = application.getPermitOccupancies();
-	                            if (BpaConstants.getBpaFeeCateory2().contains(bpaFee.getServiceType().getCode())
-	                                    && (applicationBpaService.isOccupancyContains(selectdOccupancies, INDUSTRIAL)
-	                                            || applicationBpaService.isOccupancyContains(selectdOccupancies, MERCANTILE_COMMERCIAL)))
-	                                occupancy = selectdOccupancies.get(0).getName();
-	                            else if (selectdOccupancies.size() == 1
-	                                    && (RESIDENTIAL.equalsIgnoreCase(selectdOccupancies.get(0).getCode())
-	                                            || APARTMENT_FLAT
-	                                                    .equalsIgnoreCase(selectdOccupancies.get(0).getCode())))
-	                                occupancy = RESIDENTIAL_DESC;
-	                            else if (selectdOccupancies.size() == 1
-	                                    && THATCHED_TILED_HOUSE
-	                                                    .equalsIgnoreCase(selectdOccupancies.get(0).getCode()))
-	                                occupancy = selectdOccupancies.get(0).getName();
-	                            else
-	                                occupancy = OTHERS;
-
-	                           // BigDecimal feeAmount = getBpaFeeObjByOccupancyType(bpaFee.getBpaFeeCommon().getCode(), occupancy, bpaFee);
-
-								/*
-								 * if (("101").equals(bpaFee.getCode()) || ("301").equals(bpaFee.getCode()) ||
-								 * ("401").equals(bpaFee.getCode()) || ("601").equals(bpaFee.getCode()) ||
-								 * ("701").equals(bpaFee.getCode())) {
-								 */
-	                            if (BPA_PERMIT_FEE.equals(bpaFee.getBpaFeeCommon().getName())
-										&& ((bpaFee.getServiceType().getDescription().equalsIgnoreCase(NEW_CONSTRUCTION))
-												|| (bpaFee.getServiceType().getDescription()
-														.equalsIgnoreCase(RECONSTRUCTION))
-												|| (bpaFee.getServiceType().getDescription().equalsIgnoreCase(ALTERATION))
-												|| (bpaFee.getServiceType().getDescription()
-														.equalsIgnoreCase(ADDING_OF_EXTENSION))
-												|| (bpaFee.getServiceType().getDescription()
-														.equalsIgnoreCase(CHANGE_IN_OCCUPANCY)))) {
-	                                BigDecimal existBldgInputArea = applicationBpaService.getExistBldgTotalFloorArea(application);
-	                                if (selectdOccupancies.size() > 1) {
-	                                    List<SubOccupancy> occupancies = subOccupancyService.findAllOrderByOrderNumber();
-	                                    Map<String, Map<Occupancy, BigDecimal>> convertedOccupancies = new ConcurrentHashMap<>();
-	                                    for (Map.Entry<String, Map<SubOccupancy, BigDecimal>> block : groupBlockOccupancyFloorArea(
-	                                            application.getBuildingDetail()).entrySet()) {
-	                                        for (Map.Entry<SubOccupancy, BigDecimal> blockOccupancy : block.getValue()
-	                                                .entrySet()) {
-	                                            Map<Occupancy, BigDecimal> convertInner;
-	                                            String convertedOccu = getOccupancyAsPerFloorArea(blockOccupancy.getKey(),
-	                                                    blockOccupancy.getValue());
-	                                            Optional<SubOccupancy> subOccp = occupancies.stream()
-	                                                    .filter(o -> o.getCode().equals(convertedOccu)).findFirst();
-	                                            Occupancy occp = null;
-	                                            if(subOccp.isPresent())
-	                                                occp = subOccp.get().getOccupancy();
-	                                            if(occp != null) {
-	                                                if (convertedOccupancies.containsKey(block.getKey())) {
-	                                                    Map<Occupancy, BigDecimal> existOccupancyMap = convertedOccupancies
-	                                                            .get(block.getKey());
-	                                                    if (existOccupancyMap.containsKey(occp)) {
-	                                                        existOccupancyMap.put(occp, existOccupancyMap.get(occp)
-	                                                                .add(blockOccupancy.getValue()));
-	                                                        convertedOccupancies.put(block.getKey(), existOccupancyMap);
-	                                                    } else {
-	                                                        convertInner = new ConcurrentHashMap<>();
-	                                                        convertInner.put(occp, blockOccupancy.getValue());
-	                                                        convertedOccupancies.get(block.getKey()).putAll(convertInner);
-	                                                    }
-	                                                } else {
-	                                                    convertInner = new ConcurrentHashMap<>();
-	                                                    convertInner.put(occp, blockOccupancy.getValue());
-	                                                    convertedOccupancies.put(block.getKey(), convertInner);
-	                                                }
-	                                            }
-	                                        }
-	                                    }
-	                                    for (Map.Entry<String, Map<Occupancy, BigDecimal>> blockOccupancyFloorAreas : convertedOccupancies
-	                                            .entrySet()) {
-	                                        for (Map.Entry<Occupancy, BigDecimal> occupancyWiseArea : blockOccupancyFloorAreas
-	                                                .getValue().entrySet()) {
-	                                            // occupancy =
-	                                            // getOccupancyToGetFeeAmt(occupancyWiseArea);
-	                                            if (blockOccupancyFloorAreas.getValue().size() == 1
-	                                                    && (RESIDENTIAL
-	                                                            .equalsIgnoreCase(occupancyWiseArea.getKey().getCode())
-	                                                            || APARTMENT_FLAT.equalsIgnoreCase(
-	                                                                    occupancyWiseArea.getKey().getCode())))
-	                                                occupancy = RESIDENTIAL_DESC;
-	                                            else
-	                                                occupancy = OTHERS;
-	                                            // set occupancy type and get fee
-	                                            // and calculate amount.
-												/*
-												 * feeAmount = getBpaFeeObjByOccupancyType(bpaFee.getCode(), occupancy,
-												 * bpaFee);
-												 */
-	                                            amount = amount
-	                                                    .add(calculatePermitFee(occupancyWiseArea.getValue(), BigDecimal.valueOf(bpaFee.getAmount()), false));
-	                                        }
-	                                    }
-	                                } else {
-	                                    amount = calculatePermitFee(inputArea, BigDecimal.valueOf(bpaFee.getAmount()),application.getSiteDetail().get(0).getCharitableTrustBuilding());
-	                                }
-	                                // CHECK WHETHER THIS APPLICABLE TO ONLY 701
-	                                // OCCUPANCY TYPE.. ALSO HERE WORK
-	                                // STARTED,INPROGRSS,COMPLETED TO BE CONSIDER.
-	                                if (checkIsWorkAlreadyStarted(application) && BpaConstants.getServicesForValidation()
-	                                        .contains(bpaFee.getServiceType().getCode())) {
-	                                    amount = amount.multiply(BigDecimal.valueOf(3));
-	                                } else if (checkIsEligibleForDiscountOnPermitFee(inputArea, existBldgInputArea,
-	                                        bpaFee.getServiceType().getCode(), application.getPermitOccupancies())) {
-	                                    amount = calculateAndGetDiscountedPermitFee(inputArea.multiply(BigDecimal.valueOf(bpaFee.getAmount()))); // 50%
-	                                                                                                                // off
-	                                                                                                                // if
-	                                                                                                                // area
-	                                    // less than 150
-	                                    // mts
-	                                }
-
-								} /*
-									 * else if (("102").equals(bpaFee.getCode()) || ("302").equals(bpaFee.getCode())
-									 * || ("402").equals(bpaFee.getCode()) || ("602").equals(bpaFee.getCode()) ||
-									 * ("702").equals(bpaFee.getCode())) {
-									 */
-	                            else if (BPA_ADDITIONAL_FEE.equals(bpaFee.getBpaFeeCommon().getName())
-										&& ((bpaFee.getServiceType().getDescription().equalsIgnoreCase(NEW_CONSTRUCTION))
-												|| (bpaFee.getServiceType().getDescription()
-														.equalsIgnoreCase(RECONSTRUCTION))
-												|| (bpaFee.getServiceType().getDescription().equalsIgnoreCase(ALTERATION))
-												|| (bpaFee.getServiceType().getDescription()
-														.equalsIgnoreCase(ADDING_OF_EXTENSION))
-												|| (bpaFee.getServiceType().getDescription()
-														.equalsIgnoreCase(CHANGE_IN_OCCUPANCY)))) {
-	                               // feeAmount = getBpaFeeObjByOccupancyType(bpaFee.getBpaFeeCommon().getCode(), OTHERS, bpaFee);
-	                                // calculate beyond permissable area tax for
-	                                // other
-	                                if (beyondPermissibleArea.compareTo(BigDecimal.ZERO) > 0) {
-	                                    amount = calculateAdditionalFee(beyondPermissibleArea, BigDecimal.valueOf(bpaFee.getAmount()));
-	                                }
-
-	                            }  else if (BPA_DEMOLITION_FEE.equals(bpaFee.getBpaFeeCommon().getName())
-										&& (bpaFee.getServiceType().getDescription().equalsIgnoreCase(DEMOLITION)))
-									amount = calculateDemolitionFee(inputArea, BigDecimal.valueOf(bpaFee.getAmount()));
-								else if (BPA_LAND_DEVELOPMENT_CHARGES.equals(bpaFee.getBpaFeeCommon().getName())
-										&& bpaFee.getServiceType().getDescription().equalsIgnoreCase(DIVISION_OF_PLOT) 
-										&& application.getBuildingDetail().size() > 1)
-									amount = calculateLandDevelopmentCharges(inputArea, BigDecimal.valueOf(bpaFee.getAmount()));
-								else if (BPA_PERMIT_FEE.equals(bpaFee.getBpaFeeCommon().getName()) && (bpaFee
-										.getServiceType().getDescription().equalsIgnoreCase(PERM_FOR_HUT_OR_SHED))) {
-									amount = calculatePermitFeeForHut(inputArea, BigDecimal.valueOf(bpaFee.getAmount()));
-								} else if (BPA_WELL_FEE.equals(bpaFee.getBpaFeeCommon().getName())
-										&& (bpaFee.getServiceType().getDescription().equalsIgnoreCase(WELL)))
-									amount = calculateChargesForWell(inputArea, BigDecimal.valueOf(bpaFee.getAmount()));
-								else if (BPA_COMPOUND_FEE.equals(bpaFee.getBpaFeeCommon().getName())
-										&& (bpaFee.getServiceType().getDescription().equalsIgnoreCase(COMPOUND_WALL)))
-									amount = calculateChargesForCompoundWall(inputArea, BigDecimal.valueOf(bpaFee.getAmount()));
-								else if (SHTR_DOOR_FEE.equals(bpaFee.getBpaFeeCommon().getName()) && (bpaFee
-										.getServiceType().getDescription().equalsIgnoreCase(SHUTTER_DOOR_CONVERSION)))
-									amount = calculateShutterDoorConversionCharges(inputArea, BigDecimal.valueOf(bpaFee.getAmount()));
-								else if (ROOF_CNVRSN_FEE.equals(bpaFee.getBpaFeeCommon().getName())
-										&& (bpaFee.getServiceType().getDescription().equalsIgnoreCase(ROOF_CONVERSION)))
-									amount = calculateRoofConversionCharges(inputArea, BigDecimal.valueOf(bpaFee.getAmount()));
-								else if (TOWER_CONSTRUCTION_FEE.equals(bpaFee.getBpaFeeCommon().getName())
-										&& (bpaFee.getServiceType().getDescription().equalsIgnoreCase(TOWER_CONSTRUCTION)))
-									amount = calculateTowerConstructionCharges(inputArea, BigDecimal.valueOf(bpaFee.getAmount()));
-								else if (POLE_CONSTRUCTION_FEE.equals(bpaFee.getBpaFeeCommon().getName())
-										&& (bpaFee.getServiceType().getDescription().equalsIgnoreCase(POLE_STRUCTURES)))
-									amount = calculatePoleStructureConstructionCharges(inputArea, BigDecimal.valueOf(bpaFee.getAmount()));
-							}
-	                        if (checkIsWorkAlreadyStarted(application)) {
-	                            amount = amount.multiply(BigDecimal.valueOf(3));
-	                        }
-	                        permitFee.getApplicationFee()
-	                                .addApplicationFeeDetail(
-	                                        buildApplicationFeeDetail(bpaFee, permitFee.getApplicationFee(), amount));
-	                    }
-	                }
-	            }
-	        }
-	    }
-
-	   
-
-	    private String getOccupancyToGetFeeAmt(Entry<Occupancy, BigDecimal> occupancyWiseArea) {
-	        String occupancy;
-	        if (RESIDENTIAL.equalsIgnoreCase(occupancyWiseArea.getKey().getCode())
-	                || APARTMENT_FLAT.equalsIgnoreCase(occupancyWiseArea.getKey().getCode()))
-	            occupancy = RESIDENTIAL;
-	        else if (THATCHED_TILED_HOUSE.equalsIgnoreCase(occupancyWiseArea.getKey().getCode()))
-	            occupancy = occupancyWiseArea.getKey().getCode();
-	        else
-	            occupancy = OTHERS;
-
-	        return occupancy;
+	    			for (Long serviceTypeId : serviceTypeList) {
+		            	BpaFeeMapping bpaGST = null;
+		            	for (BpaFeeMapping fee : bpaFeeMappingService.getPermitFeesByAppType(application, serviceTypeId)) {
+		            		if (fee != null) {
+		            			if (BpaConstants.GST_18.equals(fee.getBpaFeeCommon().getDescription())
+										&& (fee.getServiceType().getDescription().equalsIgnoreCase(NEW_CONSTRUCTION)
+												|| fee.getServiceType().getDescription().equalsIgnoreCase(RECONSTRUCTION)
+												|| fee.getServiceType().getDescription().equalsIgnoreCase(ADDING_OF_EXTENSION)
+												|| fee.getServiceType().getDescription().equalsIgnoreCase(ALTERATION))) {
+		            				bpaGST = fee;
+		            			}
+		            		}
+		            	}	            	
+		            	for (BpaFeeMapping bpaFee : bpaFeeMappingService.getPermitFeesByAppType(application, serviceTypeId)) {
+		                    if (bpaFee != null) {
+		                    	if(bpaFee.getServiceType().getDescription().equalsIgnoreCase(NEW_CONSTRUCTION)
+										|| bpaFee.getServiceType().getDescription().equalsIgnoreCase(RECONSTRUCTION)
+										|| bpaFee.getServiceType().getDescription().equalsIgnoreCase(ADDING_OF_EXTENSION)
+										|| bpaFee.getServiceType().getDescription().equalsIgnoreCase(ALTERATION)) {
+		                    		if (BpaConstants.SCRUTINY_FEE.equalsIgnoreCase(bpaFee.getBpaFeeCommon().getDescription())){		                    		
+			                    		BigDecimal multiplier = BigDecimal.ZERO;
+			                    		if(bpaFee.getServiceType().getDescription().equalsIgnoreCase(NEW_CONSTRUCTION)
+			                    			|| bpaFee.getServiceType().getDescription().equalsIgnoreCase(RECONSTRUCTION)) {
+			                    			multiplier = TWO_FIVE;
+			                    		}else if(bpaFee.getServiceType().getDescription().equalsIgnoreCase(ADDING_OF_EXTENSION)
+				                    			|| bpaFee.getServiceType().getDescription().equalsIgnoreCase(ALTERATION)) {
+			                    			multiplier = ONE_TWO_FIVE;
+			                    		}
+			                    		
+			                    		BigDecimal totalAmount = getTotalScruitnyFee(application.getBuildingDetail(), multiplier);
+		                            	
+		                            	if(totalAmount.compareTo(BigDecimal.ZERO)>=0) {
+		                            		permitFee.getApplicationFee()
+		                                    .addApplicationFeeDetail(
+		                                            buildApplicationFeeDetail(bpaFee, permitFee.getApplicationFee(), totalAmount));
+		                            		if(totalAmount.compareTo(BigDecimal.ZERO)>0) {
+		                            			BigDecimal gstAmount = getTotalAmountOfGST(totalAmount);
+		                            			permitFee.getApplicationFee()
+		                                        .addApplicationFeeDetail(
+		                                                buildApplicationFeeDetail(bpaGST, permitFee.getApplicationFee(), gstAmount));
+		                            		}
+		                            	}
+		                            }else if (BpaConstants.LABOURCESS.equalsIgnoreCase(bpaFee.getBpaFeeCommon().getDescription())) {
+		                            	BigDecimal totalAmount = getTotalAmountOfLabourCess(application.getBuildingDetail(), plan, mostRestrictiveFarHelper);
+		                            	if(totalAmount.compareTo(BigDecimal.ZERO)>=0) {
+		                            		permitFee.getApplicationFee()
+		                                    .addApplicationFeeDetail(
+		                                            buildApplicationFeeDetail(bpaFee, permitFee.getApplicationFee(), totalAmount));
+		                            	}                            	
+		                            }else if (BpaConstants.RULE_5_FEE.equalsIgnoreCase(bpaFee.getBpaFeeCommon().getDescription())) {
+		                            	 boolean isWorkAlreadyStarted = (null!=checkIsWorkAlreadyStarted(application))?checkIsWorkAlreadyStarted(application):false;
+		                            	 if(isWorkAlreadyStarted) {
+		                            		 BigDecimal totalAmount = getTotalAmountOfRule5(application.getBuildingDetail(), plan, mostRestrictiveFarHelper);
+				                            	if(totalAmount.compareTo(BigDecimal.ZERO)>=0) {
+				                            		permitFee.getApplicationFee()
+				                                    .addApplicationFeeDetail(
+				                                            buildApplicationFeeDetail(bpaFee, permitFee.getApplicationFee(), totalAmount));
+				                            	}  
+		                            	 }
+		                            }else if (BpaConstants.ADDITIONAL_COVERAGE_FEE.equalsIgnoreCase(bpaFee.getBpaFeeCommon().getDescription())) {
+		                            	/*BigDecimal totalAmount = BigDecimal.ZERO;
+										if(!bpaFee.getServiceType().getDescription().equalsIgnoreCase(NEW_CONSTRUCTION)) {
+			                            	totalAmount = totalAmount.add(getTotalAmountForAdditionalCoverage(application.getBuildingDetail()));	                            	  
+										}
+										if(totalAmount.compareTo(BigDecimal.ZERO)>=0) {
+											permitFee.getApplicationFee().addApplicationFeeDetail(buildApplicationFeeDetail(bpaFee, permitFee.getApplicationFee(), totalAmount));
+										}*/
+		                            }
+		                    	}
+		                    }
+		            	}
+		            }
+	    		}
+	    	}
 	    }
 
 	    protected ApplicationFeeDetail buildApplicationFeeDetail(final BpaFeeMapping bpaFee, final ApplicationFee applicationFee,
@@ -622,60 +277,12 @@ public class PermitFeeCalculationService implements ApplicationBpaFeeCalculation
 			return feeDetail;
 		}
 
-	    private BigDecimal calculatePermitFeeForHut(BigDecimal inputArea, BigDecimal feeAmount) {
-	        return inputArea.multiply(feeAmount);
-	    }
-
-	    private BigDecimal calculatePoleStructureConstructionCharges(BigDecimal inputArea, BigDecimal feeAmount) {
-	        return inputArea.multiply(feeAmount);
-	    }
-
-	    private BigDecimal calculateTowerConstructionCharges(BigDecimal inputArea, BigDecimal feeAmount) {
-	        return inputArea.multiply(feeAmount);
-	    }
-
-	    private BigDecimal calculateRoofConversionCharges(BigDecimal inputArea, BigDecimal feeAmount) {
-	        return inputArea.multiply(feeAmount);
-	    }
-
-	    private BigDecimal calculateShutterDoorConversionCharges(BigDecimal inputArea, BigDecimal feeAmount) {
-	        return inputArea.multiply(feeAmount);
-	    }
-
-	    private BigDecimal calculateChargesForCompoundWall(BigDecimal inputArea, BigDecimal feeAmount) {
-	        return inputArea.multiply(feeAmount);
-	    }
-
-	    private BigDecimal calculateChargesForWell(BigDecimal inputArea, BigDecimal feeAmount) {
-	        return inputArea.multiply(feeAmount);
-	    }
-
-	    private BigDecimal calculateLandDevelopmentCharges(BigDecimal inputArea, BigDecimal feeAmount) {
-	        return inputArea.multiply(feeAmount);
-	    }
-
-	    private BigDecimal calculateDemolitionFee(BigDecimal inputArea, BigDecimal feeAmount) {
-	        return inputArea.multiply(feeAmount);
-	    }
-
-	    private BigDecimal calculateAdditionalFee(BigDecimal inputArea, BigDecimal feeAmount) {
-	        return inputArea.multiply(feeAmount);
-	    }
-	    
 		protected BigDecimal calculatePermitFee(BigDecimal inputArea, BigDecimal feeAmount, Boolean isCharitable) {
 			if(isCharitable)
 			    return inputArea.multiply(feeAmount).multiply(BigDecimal.valueOf(50)).divide(BigDecimal.valueOf(100));
 			else
 				return inputArea.multiply(feeAmount);
 		}
-
-	    protected BigDecimal calculateShelterFundAmount(BigDecimal area, BigDecimal amount) {
-	        return amount.multiply(area.multiply(TEN).divide(HUNDRED));
-	    }
-	    
-	    protected BigDecimal calculateLabourCessAmount(BigDecimal amount) {
-	        return amount.multiply(BigDecimal.valueOf(1)).divide(HUNDRED);
-	    }
 
 	    /**
 	     * @param application
@@ -684,85 +291,7 @@ public class PermitFeeCalculationService implements ApplicationBpaFeeCalculation
 	    protected Boolean checkIsWorkAlreadyStarted(final BpaApplication application) {
 	        return application.getSiteDetail().get(0).getIsappForRegularization();
 	    }
-
-	    /**
-	     * @param inputUnit
-	     * @param serviceTypeCode
-	     * @return is eligible for permit fee 50% waive off ?
-	     */
-	    private Boolean checkIsEligibleForDiscountOnPermitFee(final BigDecimal inputUnit,
-	            final BigDecimal existBldgInputArea, final String serviceTypeCode, final List<Occupancy> occupancies) {
-	        return applicationBpaService.isOccupancyContains(occupancies, BpaConstants.RESIDENTIAL)
-	                && BpaConstants.getServicesForValidation().contains(serviceTypeCode)
-	                && inputUnit.add(existBldgInputArea).compareTo(BigDecimal.valueOf(150)) <= 0;
-	    }
-
-	    /**
-	     * @param occupancyType
-	     * @param occupancyType
-	     * @param bpaFee
-	     * @return master rate value for each service type based on occupancy type
-	     */
-	    private BigDecimal getBpaFeeObjByOccupancyType(final String feeCode, String occupancyType, final BpaFee bpaFee) {
-	        BigDecimal rate = BigDecimal.ZERO;
-	        for (BpaFeeDetail feeDetail : bpaFee.getFeeDetail()) {
-	            if (feeCode != null && feeCode.equalsIgnoreCase(bpaFee.getCode())) {
-	                if (feeDetail.getAdditionalType() != null
-	                        && occupancyType.equalsIgnoreCase(feeDetail.getAdditionalType())) {
-	                    rate = BigDecimal.valueOf(feeDetail.getAmount());
-	                    break;
-	                } else {
-	                    rate = BigDecimal.valueOf(feeDetail.getAmount());
-	                }
-	            }
-	        }
-	        return rate;
-	    }
-
-	    /**
-	     * @param amount
-	     * @return after discounted amount (eligible if constructing only up to 150 sqmtrs)
-	     */
-	    private BigDecimal calculateAndGetDiscountedPermitFee(final BigDecimal amount) {
-	        return amount.multiply(BigDecimal.valueOf(50)).divide(BigDecimal.valueOf(100));
-	    }
-
-	    /**
-	     * @param application
-	     * @param serviceTypeCode
-	     * @return input unit value for fee calculation
-	     */
-	    private BigDecimal getInputUnitForEachServiceType(final BpaApplication application, final String serviceTypeCode) {
-	        BigDecimal inputUnit = BigDecimal.ZERO;
-
-	        if (BpaConstants.getBpaFeeCateory1().contains(serviceTypeCode)) {
-	            inputUnit = applicationBpaService.getTotalFloorArea(application);
-	        } else if (BpaConstants.getBpaFeeCateory2().contains(serviceTypeCode)) { // Sub-Division
-	                                                                                 // of
-	                                                                                 // plot/Land
-	                                                                                 // Development
-	            inputUnit = application.getSiteDetail().get(0).getExtentinsqmts();
-	        } else if ("10".equals(serviceTypeCode)) { // well
-	            inputUnit = application.getSiteDetail().get(0).getDwellingunitnt();
-	        } else if ("11".equals(serviceTypeCode)) { // Compound Wall
-	            inputUnit = application.getSiteDetail().get(0).getLengthOfCompoundWall();
-	        } else if ("14".equals(serviceTypeCode)) { // Tower Construction
-	            inputUnit = application.getSiteDetail().get(0).getErectionoftower();
-	        } else if ("12".equals(serviceTypeCode)) { // Shutter or Door
-	                                                   // Conversion/Erection
-	            inputUnit = application.getSiteDetail().get(0).getShutter();
-	        } else if ("13".equals(serviceTypeCode)) { // Roof Conversion
-	            inputUnit = application.getSiteDetail().get(0).getRoofConversion();
-	        } else if ("15".equals(serviceTypeCode)) { // Pole Structures
-	            inputUnit = application.getSiteDetail().get(0).getNoOfPoles();
-	        } else if ("09".equals(serviceTypeCode)) { // hut or shed
-	            inputUnit = application.getSiteDetail().get(0).getNoOfHutOrSheds();
-	        }
-	        return inputUnit;
-	    }
-	    
-	    
-	    
+  
 	    protected BigDecimal getBuiltUpInputUnitForEachServiceType(final BpaApplication application, final String serviceTypeCode) {
 	        BigDecimal inputUnit = BigDecimal.ZERO;
 
@@ -1150,55 +679,6 @@ public class PermitFeeCalculationService implements ApplicationBpaFeeCalculation
 	        return null;
 	    }
 
-	    public static String getOccupancyAsPerFloorArea(SubOccupancy occupancy, BigDecimal floorArea) {
-	        String type = occupancy.getCode();
-	        String convertedOccupancy = type;
-	        if ((BpaConstants.EDUCATIONAL.equals(type) || BpaConstants.EDUCATIONAL_HIGHSCHOOL.equals(type)
-	                || BpaConstants.HIGHER_EDUCATIONAL_INSTITUTE.equals(occupancy.getCode()))) {
-	            if (floorArea != null && floorArea.compareTo(ONE_HUNDRED_FIFTY) <= 0)
-	                convertedOccupancy = BpaConstants.SPECIAL_RESIDENTIAL;
-	            else
-	                convertedOccupancy = BpaConstants.EDUCATIONAL;
-	        } else if ((BpaConstants.MEDIACL_HOSPITAL.equals(type) || BpaConstants.MEDIACL_IP.equals(type)
-	                || BpaConstants.MEDIACL_OP.equals(type) || BpaConstants.MEDICAL_ADMIN.equals(type))) {
-	            if (floorArea != null && floorArea.compareTo(ONE_HUNDRED_FIFTY) <= 0)
-	                convertedOccupancy = BpaConstants.MERCANTILE_COMMERCIAL;
-	            else
-	                convertedOccupancy = BpaConstants.MEDIACL_HOSPITAL;
-	        } else if (floorArea != null && floorArea.compareTo(ONE_HUNDRED_FIFTY) <= 0
-	                && (BpaConstants.ASSEMBLY.equals(type)))
-	            convertedOccupancy = BpaConstants.MERCANTILE_COMMERCIAL;
-	        else if ((BpaConstants.ASSEMBLY_WORSHIP.equals(type) || BpaConstants.BUS_TERMINAL.equals(type)))
-	            convertedOccupancy = BpaConstants.ASSEMBLY;
-	        else if ((BpaConstants.OFFICE_BUSINESS.equals(type))) {
-	            if (floorArea != null && floorArea.compareTo(THREE_HUNDRED) <= 0)
-	                convertedOccupancy = BpaConstants.MERCANTILE_COMMERCIAL;
-	            else
-	                convertedOccupancy = BpaConstants.OFFICE_BUSINESS;
-	        } else if ((BpaConstants.STORAGE.equals(type))) {
-	            if (floorArea != null && floorArea.compareTo(THREE_HUNDRED) <= 0)
-	                convertedOccupancy = BpaConstants.MERCANTILE_COMMERCIAL;
-	            else
-	                convertedOccupancy = BpaConstants.STORAGE;
-	        } else if (BpaConstants.PROFESSIONAL_OFFICE.equals(type)) {
-	            if (floorArea != null && floorArea.compareTo(FIFTY) <= 0)
-	                convertedOccupancy = BpaConstants.RESIDENTIAL;
-	            else
-	                convertedOccupancy = BpaConstants.MERCANTILE_COMMERCIAL;
-	        }
-	        return convertedOccupancy;
-	    }
-
-	/*
-	 * @Override public EgDemand createDemand(BpaApplication application) { return
-	 * applicationBpaBillService.createDemand(application); }
-	 * 
-	 * @Override public EgDemand
-	 * createDemandWhenFeeCollectionNotRequire(BpaApplication application) { return
-	 * applicationBpaBillService.createDemandWhenFeeCollectionNotRequire(application
-	 * ); }
-	 */
-	    
 	    @Override
 	    public EgDemand createDemand(final BpaApplication application) {
 	        final Map<String, BigDecimal> feeDetails = new HashMap<>();
@@ -1276,5 +756,216 @@ public class PermitFeeCalculationService implements ApplicationBpaFeeCalculation
 	        demandDetail.setCreateDate(new Date());
 	        demandDetail.setModifiedDate(new Date());
 	        return demandDetail;
+	    }
+	    
+	    public BigDecimal getTotalScruitnyFee(List<BuildingDetail> buildingDetails, BigDecimal multiplier) {
+	        BigDecimal totalAmount = BigDecimal.ZERO;
+	        for (BuildingDetail building : buildingDetails) {
+	            for (ApplicationFloorDetail floor : building.getApplicationFloorDetails()) {
+	            	totalAmount = totalAmount.add(floor.getFloorArea().multiply(SQMT_SQFT_MULTIPLIER).multiply(multiplier).setScale(2, BigDecimal.ROUND_UP));
+	            }
+	        }
+	        return totalAmount;
+	    }
+	    
+	    public BigDecimal getTotalAmountOfGST(BigDecimal amount) {
+	    	BigDecimal totalAmount = BigDecimal.ZERO;
+	    	if(amount.compareTo(BigDecimal.ZERO)>0) {
+	    		totalAmount = totalAmount.add((amount.multiply(EIGHTEEN).divide(HUNDRED)).setScale(2, BigDecimal.ROUND_HALF_UP));
+	    	}
+	        return totalAmount;
+	    }
+	    
+	    public BigDecimal getTotalAmountOfLabourCess(List<BuildingDetail> buildingDetails, Plan plan, OccupancyTypeHelper mostRestrictiveFarHelper) {
+	    	BigDecimal totalAmount = BigDecimal.ZERO;
+	    	BigDecimal multiplier = BigDecimal.ZERO;	    	
+	    	if(BpaConstants.IT_MCL.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())
+				|| BpaConstants.IT_MCM.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())
+				|| BpaConstants.IT_MCS.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())
+    			|| BpaConstants.R1.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())
+    			|| BpaConstants.F_H.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())
+    			|| BpaConstants.F_M.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())
+    			|| BpaConstants.F_TCIM.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())
+    			|| BpaConstants.F_BH.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())
+				|| BpaConstants.F_BBM.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())
+				|| BpaConstants.F_TS.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())
+				|| BpaConstants.F_PP.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())
+				|| BpaConstants.F_CD.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())
+				|| BpaConstants.G_GBAC.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())
+				|| BpaConstants.G_GBZP.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())					
+				|| BpaConstants.P_D.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())
+				|| BpaConstants.P_P.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())
+				|| BpaConstants.P_F.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())
+				|| BpaConstants.P_N.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())
+				|| BpaConstants.P_H.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())
+				|| BpaConstants.P_CC.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())
+				|| BpaConstants.P_SS.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())
+				|| BpaConstants.P_CNA.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())
+				|| BpaConstants.P_R.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())					
+				|| BpaConstants.B_EC.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())
+				|| BpaConstants.B_HEI.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())
+				|| BpaConstants.B_H.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())										
+				|| BpaConstants.ITH_H.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())
+				|| BpaConstants.ITH_C.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())
+				|| BpaConstants.ITH_CC.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())
+				|| BpaConstants.ITH_R.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())
+				|| BpaConstants.ITH_GH.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())					
+				|| BpaConstants.IP_I.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())
+				|| BpaConstants.IP_R.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())
+				|| BpaConstants.IP_C.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())) {
+	    		multiplier = TWENTY_FIVE_HUNDRED;
+	    	}else if(BpaConstants.F_B.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())) {
+	    		multiplier = THOUSAND;
+	    	}else if(BpaConstants.A_P.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())
+	    			|| BpaConstants.A_G.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())	    			
+					|| BpaConstants.F_CFI.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())					
+					|| BpaConstants.F_SCO.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())) {
+	    		multiplier = FIFTEEN_HUNDRED;
+	    	}else {
+	    		multiplier = TWENTY_FIVE_HUNDRED;
+	    	}
+	    	
+	    	if(multiplier.compareTo(BigDecimal.ZERO) > 0) {
+		        BigDecimal estimatedAmount = BigDecimal.ZERO;
+		        for (BuildingDetail building : buildingDetails) {
+		            for (ApplicationFloorDetail floor : building.getApplicationFloorDetails()) {
+		            	estimatedAmount = estimatedAmount.add(floor.getFloorArea().multiply(SQMT_SQFT_MULTIPLIER).multiply(multiplier).setScale(2, BigDecimal.ROUND_HALF_UP));
+		            }
+		        }
+		        
+		        for (Block b : plan.getBlocks()) {
+		            Building building = b.getBuilding();
+		            if (building != null) {
+		                for (Floor floor : building.getFloors()) {
+		                    if (floor.getOverHangs() != null && !floor.getOverHangs().isEmpty()) {
+		                        List<BigDecimal> areas = floor.getOverHangs().stream().map(overhang -> overhang.getArea())
+		                                .collect(Collectors.toList());
+		                        BigDecimal totalCajjaArea = areas.stream()
+		                                .filter(Objects::nonNull)
+		                                .reduce(BigDecimal.ZERO, BigDecimal::add);
+		                        estimatedAmount = estimatedAmount.add(totalCajjaArea.multiply(SQMT_SQFT_MULTIPLIER).multiply(multiplier).setScale(2, BigDecimal.ROUND_HALF_UP));
+		                    }
+		                }
+		            }
+		        }
+		        if(estimatedAmount.compareTo(TEN_LAKH)>=0) {
+		        	totalAmount = totalAmount.add((estimatedAmount.divide(HUNDRED)).setScale(2, BigDecimal.ROUND_HALF_UP));	
+		        }
+	    	}	        
+	        return totalAmount;
+	    }
+	    
+	    public BigDecimal getTotalAmountForAdditionalCoverage(List<BuildingDetail> buildingDetails) {
+	        BigDecimal totalAmount = BigDecimal.ZERO;
+	        for (BuildingDetail building : buildingDetails) {
+	            for (ApplicationFloorDetail floor : building.getApplicationFloorDetails()) {
+	            	if(floor.getFloorNumber() == 0) {
+	            		totalAmount = totalAmount.add(floor.getFloorArea().multiply(SQMT_SQFT_MULTIPLIER).multiply(HUNDRED).setScale(2, BigDecimal.ROUND_HALF_UP));
+	            	}/*else if(floor.getFloorNumber() == 1 || floor.getFloorNumber() == 2) {
+	            		totalAmount = totalAmount.add(floor.getFloorArea().multiply(SQMT_SQFT_MULTIPLIER).multiply(FORTY).setScale(2, BigDecimal.ROUND_HALF_UP));
+	            	}*/
+	            }
+	        }
+	        return totalAmount;
+	    }
+	    
+	    public BigDecimal getTotalAmountOfRule5(List<BuildingDetail> buildingDetails, Plan plan, OccupancyTypeHelper mostRestrictiveFarHelper) {
+	    	BigDecimal totalAmount = BigDecimal.ZERO;
+	    	BigDecimal totalArea = BigDecimal.ZERO;
+	    	BigDecimal totalCoveredArea = BigDecimal.ZERO;
+	    	BigDecimal totalBasementArea = BigDecimal.ZERO;
+	    	for (Block b : plan.getBlocks()) {
+	            Building building = b.getBuilding();
+	            if (building != null) {
+	            	if(null!=building.getCoverageArea()) {
+	            		totalCoveredArea = totalCoveredArea.add(building.getCoverageArea());
+	            	}
+	                for (Floor floor : building.getFloors()) {
+	                	if (floor.getNumber() < 0) {
+	                		if(null!=floor.getArea()) {
+	                			totalBasementArea = totalBasementArea.add(floor.getArea());
+	                		}
+	                	}
+	                }
+	            }
+	        }
+	    	totalArea = totalArea.add(totalCoveredArea).add(totalBasementArea);
+	    	BigDecimal multiplier = BigDecimal.ZERO;	    	
+	    	if(BpaConstants.F_H.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())
+    			|| BpaConstants.F_M.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())
+    			|| BpaConstants.F_TCIM.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())
+    			|| BpaConstants.F_CFI.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())					
+				|| BpaConstants.F_SCO.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())
+				|| BpaConstants.F_BH.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())
+				|| BpaConstants.F_BBM.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())
+				|| BpaConstants.F_TS.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())
+				|| BpaConstants.F_PP.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())
+				|| BpaConstants.F_CD.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())) {
+	    		multiplier = THIRTY;
+	    	}else if(BpaConstants.A_P.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())) {
+	    		multiplier = TEN;
+	    	}else if(BpaConstants.A_G.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())
+	    			|| BpaConstants.IT_MCL.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())
+					|| BpaConstants.IT_MCM.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())
+					|| BpaConstants.IT_MCS.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())
+	    			|| BpaConstants.R1.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())
+					|| BpaConstants.G_GBAC.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())
+					|| BpaConstants.G_GBZP.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())					
+					|| BpaConstants.P_D.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())
+					|| BpaConstants.P_P.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())
+					|| BpaConstants.P_F.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())
+					|| BpaConstants.P_N.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())
+					|| BpaConstants.P_H.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())
+					|| BpaConstants.P_CC.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())
+					|| BpaConstants.P_SS.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())
+					|| BpaConstants.P_CNA.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())
+					|| BpaConstants.P_R.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())					
+					|| BpaConstants.B_EC.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())
+					|| BpaConstants.B_HEI.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())
+					|| BpaConstants.B_H.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())										
+					|| BpaConstants.ITH_H.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())
+					|| BpaConstants.ITH_C.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())
+					|| BpaConstants.ITH_CC.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())
+					|| BpaConstants.ITH_R.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())
+					|| BpaConstants.ITH_GH.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())					
+					|| BpaConstants.IP_I.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())
+					|| BpaConstants.IP_R.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())
+					|| BpaConstants.IP_C.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())
+					) {
+	    		multiplier = TWENTY;
+	    	}
+	    	if(totalArea.compareTo(BigDecimal.ZERO) > 0 && multiplier.compareTo(BigDecimal.ZERO) > 0) {
+	    		totalAmount = totalAmount.add(totalArea.multiply(SQMT_SQFT_MULTIPLIER).multiply(multiplier).setScale(2, BigDecimal.ROUND_HALF_UP));
+	    	}
+	    	return totalAmount;
+	    }
+	    
+	    public BigDecimal getTotalSecurityFee(Plan plan, OccupancyTypeHelper mostRestrictiveFarHelper) {
+	    	boolean isFeeDynamic=false;
+	    	BigDecimal multiplier = BigDecimal.ZERO;
+	    	BigDecimal totalAmount = BigDecimal.ZERO;
+	    	if(BpaConstants.A_P.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())
+	    	   || BpaConstants.F_SCO.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())
+	    	   || BpaConstants.G_GBAC.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())
+	    	   || BpaConstants.G_GBZP.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())) {
+	    		isFeeDynamic=false;
+	    		multiplier = TEN_THOUSAND;
+	    	}else if(BpaConstants.F_B.equalsIgnoreCase(mostRestrictiveFarHelper.getSubtype().getCode())) {
+	    		isFeeDynamic=false;
+	    		multiplier = FIVE_THOUSAND;
+	    	}else {
+	    		isFeeDynamic=true;
+	    		multiplier = TEN_THOUSAND;
+	    	}	    	
+	    	if(isFeeDynamic) {
+	    		BigDecimal totalAreaOfPlot = plan.getPlot().getArea();
+	    		BigDecimal totalAreaInHalfAcre = totalAreaOfPlot.divide(HALF_ACRE_IN_SQMT, 2, BigDecimal.ROUND_HALF_UP);
+	    		int halfAcreCount = totalAreaInHalfAcre.intValue();
+	    		halfAcreCount = (totalAreaInHalfAcre.compareTo(new BigDecimal(halfAcreCount))>=0)?halfAcreCount+1:halfAcreCount;	    		
+	    		totalAmount = totalAmount.add(multiplier.multiply(new BigDecimal(halfAcreCount)).setScale(2, BigDecimal.ROUND_HALF_UP));
+	    	}else {
+	    		totalAmount = multiplier;
+	    	}
+	    	return totalAmount;
 	    }
 }

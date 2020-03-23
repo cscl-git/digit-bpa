@@ -76,6 +76,7 @@ public class SetBackService extends FeatureProcess {
     @Autowired
     private RearYardService rearYardService;
 
+    /* 
     @Override
     public Plan validate(Plan pl) {
         HashMap<String, String> errors = new HashMap<>();
@@ -150,6 +151,12 @@ public class SetBackService extends FeatureProcess {
 
         return pl;
     }
+    */
+    
+    @Override
+    public Plan validate(Plan pl) {
+    	return pl;
+    }
 
     @Override
     public Plan process(Plan pl) {
@@ -168,6 +175,8 @@ public class SetBackService extends FeatureProcess {
 
         return pl;
     }
+    
+    
 
     @Override
     public Map<String, Date> getAmendments() {

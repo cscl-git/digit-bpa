@@ -110,20 +110,20 @@
 								</div>
 							</div>
 							<div class="form-group view-content header-color hidden-xs">
-								<div class="col-sm-3">
+								<div class="col-sm-6">
 									<spring:message code="lbl.documentname"/>
 								</div>
 								<div class="col-sm-3">
 									<spring:message code="lbl.isrequested"/>
 								</div>
-								<div class="col-sm-5">
+								<div class="col-sm-3">
 									<spring:message code="lbl.remarks"/>
 								</div>
 							</div>
 							<c:forEach var="docs" items="${checkListDetailList}"
 									   varStatus="status">
 								<div class="form-group">
-									<div class="col-sm-3 add-margin check-text">
+									<div class="col-sm-6 add-margin check-text">
 										<c:out value="${docs.checklist.description}"></c:out>
 										<c:if test="${docs.mandatory}">
 											<span class="mandatory"></span>
@@ -149,7 +149,7 @@
 												class="requested"/>
 									</div>
 
-									<div class="col-sm-5 add-margin">
+									<div class="col-sm-3 add-margin">
 
 										<form:textarea class="form-control patternvalidation"
 													   data-pattern="alphanumericspecialcharacters" maxlength="248"

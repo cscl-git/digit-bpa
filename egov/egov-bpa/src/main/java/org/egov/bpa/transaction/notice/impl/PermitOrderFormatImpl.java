@@ -135,8 +135,14 @@ public class PermitOrderFormatImpl implements PermitApplicationNoticesFormat {
                     ? new BpaApplication()
                     : bpaApplication, reportParams);
             ReportOutput reportOutputPermitNote = reportService.createReport(reportInputPermitNote);
+            String filename = bpaApplication.getApplicationNumber() + "-II-v1";
             bpaNoticeUtil.saveBpaNotices(bpaApplication, reportOutput, reportOutputPermitNote,
-                    bpaApplication.getPlanPermissionNumber(),PERMIT_ORDER_NOTICE_TYPE,null);
+            		filename,PERMIT_ORDER_NOTICE_TYPE,null);
+			/*
+			 * bpaNoticeUtil.saveBpaNotices(bpaApplication, reportOutput,
+			 * reportOutputPermitNote,
+			 * bpaApplication.getPlanPermissionNumber(),PERMIT_ORDER_NOTICE_TYPE,null);
+			 */
             List<BpaNotice> permitOrder = bpaApplication.getBpaNotice().stream()
                     .filter(bpaNotice1 -> bpaNotice1.getNoticeType().equalsIgnoreCase("PermitOrder"))
                     .collect(Collectors.toList());

@@ -64,6 +64,7 @@ import org.egov.bpa.transaction.service.messaging.BPASmsAndEmailService;
 import org.egov.bpa.utils.BpaConstants;
 import org.egov.bpa.utils.BpaUtils;
 import org.egov.common.entity.dcr.helper.EdcrApplicationInfo;
+import org.egov.common.entity.edcr.OccupancyTypeHelper;
 import org.egov.infra.admin.master.entity.User;
 import org.egov.infra.admin.master.service.UserService;
 import org.egov.infra.config.core.ApplicationThreadLocals;
@@ -243,18 +244,78 @@ public class PermitNocApplicationService {
         nocApplication.setSlaEndDate(c.getTime());
     }
 
-    public Map<String, String> getEdcrNocMandatory(final String edcrNumber) {
-
-        EdcrApplicationInfo edcrPlanInfo = drcRestService.getDcrPlanInfo(edcrNumber,
-                ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest());
-        Map<String, String> nocTypeMap = new HashMap<>();
-        if(edcrPlanInfo.getPlan()!=null){
-        nocTypeMap.put(BpaConstants.FIRENOCTYPE, edcrPlanInfo.getPlan().getPlanInformation().getNocFireDept());
-        nocTypeMap.put(BpaConstants.AIRPORTNOCTYPE, edcrPlanInfo.getPlan().getPlanInformation().getNocNearAirport());
-        nocTypeMap.put(BpaConstants.NMANOCTYPE, edcrPlanInfo.getPlan().getPlanInformation().getNocNearMonument());
-        nocTypeMap.put(BpaConstants.ENVNOCTYPE, edcrPlanInfo.getPlan().getPlanInformation().getNocStateEnvImpact());
-        nocTypeMap.put(BpaConstants.IRRNOCTYPE, edcrPlanInfo.getPlan().getPlanInformation().getNocIrrigationDept());
-        }
+    public Map<String, String> getEdcrNocMandatory(final String edcrNumber) {		
+		EdcrApplicationInfo edcrPlanInfo = drcRestService.getDcrPlanInfo(edcrNumber, ((ServletRequestAttributes)RequestContextHolder.getRequestAttributes()).getRequest());
+		Map<String, String> nocTypeMap = new HashMap<>();	
+		nocTypeMap.put(BpaConstants.FIRENOCTYPE, "NO");
+		nocTypeMap.put(BpaConstants.PH7NOCTYPE, "NO");
+		nocTypeMap.put(BpaConstants.TEHNOCTYPE, "NO");
+		nocTypeMap.put(BpaConstants.PHNOCTYPE, "NO");
+		nocTypeMap.put(BpaConstants.MANINOCTYPE, "NO");
+		nocTypeMap.put(BpaConstants.ROAD2NOCTYPE, "NO");
+		nocTypeMap.put(BpaConstants.PACNOCTYPE, "NO");
+		nocTypeMap.put(BpaConstants.STRCNOCTYPE, "NO");
+		nocTypeMap.put(BpaConstants.ELECNOCTYPE, "NO");
+		nocTypeMap.put(BpaConstants.POLNOCTYPE, "NO");
+		if(edcrPlanInfo.getPlan()!=null){ 
+			edcrPlanInfo.getPlan().getPlanInformation().setNocPACDept("NO");
+			edcrPlanInfo.getPlan().getPlanInformation().setNocStructureDept("NO");
+			edcrPlanInfo.getPlan().getPlanInformation().setNocFireDept("NO");
+			edcrPlanInfo.getPlan().getPlanInformation().setNocTehsildarDept("NO");
+			edcrPlanInfo.getPlan().getPlanInformation().setNocManimajaraDept("NO");
+			edcrPlanInfo.getPlan().getPlanInformation().setNocElectricalDept("NO");
+			edcrPlanInfo.getPlan().getPlanInformation().setNocPollutionDept("NO");
+			edcrPlanInfo.getPlan().getPlanInformation().setNocPH7Dept("NO");
+			edcrPlanInfo.getPlan().getPlanInformation().setNocPHDept("NO");
+			edcrPlanInfo.getPlan().getPlanInformation().setNocRoad2Dept("NO");
+			if(null!=edcrPlanInfo.getPlan()) {
+				OccupancyTypeHelper occupancyTypeHelper = edcrPlanInfo.getPlan().getVirtualBuilding() != null
+						? edcrPlanInfo.getPlan().getVirtualBuilding().getMostRestrictiveFarHelper()
+						: null;
+				String boundaryType = "";
+				String plotType = "";
+				if(null != edcrPlanInfo.getPlan().getPlanInfoProperties().get(BpaConstants.ROOT_BOUNDARY_TYPE)) {
+					boundaryType = edcrPlanInfo.getPlan().getPlanInfoProperties().get(BpaConstants.ROOT_BOUNDARY_TYPE);
+				}
+				if(null != edcrPlanInfo.getPlan().getPlanInfoProperties().get(BpaConstants.PLOT_TYPE)) {
+					plotType = edcrPlanInfo.getPlan().getPlanInfoProperties().get(BpaConstants.PLOT_TYPE);
+				}
+				if(boundaryType.equalsIgnoreCase(BpaConstants.URBAN)) {
+					if(plotType.equalsIgnoreCase(BpaConstants.ABOVE_TWO_KANAL)) {
+						if(BpaConstants.A_G.equalsIgnoreCase(occupancyTypeHelper.getSubtype().getCode())
+							|| BpaConstants.A_P.equalsIgnoreCase(occupancyTypeHelper.getSubtype().getCode())){
+							edcrPlanInfo.getPlan().getPlanInformation().setNocPACDept("YES");
+							edcrPlanInfo.getPlan().getPlanInformation().setNocStructureDept("YES");
+						}else {
+							edcrPlanInfo.getPlan().getPlanInformation().setNocPACDept("YES");
+							edcrPlanInfo.getPlan().getPlanInformation().setNocFireDept("YES");
+							edcrPlanInfo.getPlan().getPlanInformation().setNocStructureDept("YES");
+							edcrPlanInfo.getPlan().getPlanInformation().setNocElectricalDept("YES");
+							edcrPlanInfo.getPlan().getPlanInformation().setNocPollutionDept("YES");
+							edcrPlanInfo.getPlan().getPlanInformation().setNocPH7Dept("YES");
+						}
+					}
+				}else if(boundaryType.equalsIgnoreCase(BpaConstants.RURAL)){
+					edcrPlanInfo.getPlan().getPlanInformation().setNocFireDept("YES");
+					edcrPlanInfo.getPlan().getPlanInformation().setNocTehsildarDept("YES");
+					edcrPlanInfo.getPlan().getPlanInformation().setNocManimajaraDept("YES");
+					edcrPlanInfo.getPlan().getPlanInformation().setNocElectricalDept("YES");
+					edcrPlanInfo.getPlan().getPlanInformation().setNocPollutionDept("YES");
+					edcrPlanInfo.getPlan().getPlanInformation().setNocPHDept("YES");
+					edcrPlanInfo.getPlan().getPlanInformation().setNocRoad2Dept("YES");
+				}
+			}			
+			nocTypeMap.put(BpaConstants.FIRENOCTYPE, edcrPlanInfo.getPlan().getPlanInformation().getNocFireDept());
+			nocTypeMap.put(BpaConstants.PH7NOCTYPE, edcrPlanInfo.getPlan().getPlanInformation().getNocPH7Dept());
+			nocTypeMap.put(BpaConstants.TEHNOCTYPE, edcrPlanInfo.getPlan().getPlanInformation().getNocTehsildarDept());
+			nocTypeMap.put(BpaConstants.PHNOCTYPE, edcrPlanInfo.getPlan().getPlanInformation().getNocPHDept());
+			nocTypeMap.put(BpaConstants.MANINOCTYPE, edcrPlanInfo.getPlan().getPlanInformation().getNocManimajaraDept());
+			nocTypeMap.put(BpaConstants.ROAD2NOCTYPE, edcrPlanInfo.getPlan().getPlanInformation().getNocRoad2Dept());
+			nocTypeMap.put(BpaConstants.PACNOCTYPE, edcrPlanInfo.getPlan().getPlanInformation().getNocPACDept());
+			nocTypeMap.put(BpaConstants.STRCNOCTYPE, edcrPlanInfo.getPlan().getPlanInformation().getNocStructureDept());
+			nocTypeMap.put(BpaConstants.ELECNOCTYPE, edcrPlanInfo.getPlan().getPlanInformation().getNocElectricalDept());
+			nocTypeMap.put(BpaConstants.POLNOCTYPE, edcrPlanInfo.getPlan().getPlanInformation().getNocPollutionDept());
+		}		 
         return nocTypeMap;
     }
 }

@@ -93,6 +93,10 @@ public class BlockDistancesService extends FeatureProcess {
 
 	@Override
 	public Plan process(Plan pl) {
+		boolean isNotApplicable = true;
+		if (isNotApplicable)
+			return pl;
+
 		processDistanceBetweenBlocks(pl);
 		return pl;
 	}
@@ -269,12 +273,10 @@ public class BlockDistancesService extends FeatureProcess {
 			if (setback.getSideYard2() != null)
 				setBacksValues.add(setback.getSideYard2().getHeight());
 		}
-		
 
 		BigDecimal dividedHeight = maxHeight.divide(THREE, DcrConstants.DECIMALDIGITS_MEASUREMENTS,
 				DcrConstants.ROUNDMODE_MEASUREMENTS);
 
-		
 		List<BigDecimal> heights = Arrays.asList(dividedHeight, BigDecimal.valueOf(18));
 		BigDecimal minHeight = heights.stream().reduce(BigDecimal::min).get();
 

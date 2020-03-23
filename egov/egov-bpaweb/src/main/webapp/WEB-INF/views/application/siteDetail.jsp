@@ -64,9 +64,9 @@
 	<jsp:include page="amenityDetails.jsp"></jsp:include>
 	
 	<div class="form-group">
-		<label class="col-sm-3 control-label text-right"><spring:message
+		<label class="col-sm-3 control-label text-right" style="display: none;"><spring:message
 				code="lbl.re.survey" /></label>
-		<div class="col-sm-3 add-margin">
+		<div class="col-sm-3 add-margin" style="display: none;">
 			<form:input class="form-control patternvalidation" maxlength="72"
 				data-pattern="alphanumericspecialcharacters" data-role="tagsinput" id="reSurveyNumber"
 				path="siteDetail[0].reSurveyNumber" />
@@ -74,7 +74,7 @@
 			<form:errors path="siteDetail[0].reSurveyNumber"
 				cssClass="add-margin error-msg" />
 		</div>
-		<label class="col-sm-2 control-label text-right"><spring:message
+		<label class="col-sm-3 control-label text-right"><spring:message
 				code="lbl.nature.of.ownership" /><span class="mandatory"></span> </label>
 		<div class="col-sm-3 add-margin">
 			<form:input class="form-control patternvalidation" maxlength="128"
@@ -92,20 +92,16 @@
 		<div class="col-sm-3 add-margin">
 			<form:input class="form-control patternvalidation" maxlength="20"
 				data-pattern="alphanumericspecialcharacters"  id="khataNumber"
-				path="siteDetail[0].khataNumber" required="required" />
-			<!--  	<small class="text-info view-content"><spring:message code="lbl.values.separated.comma"/></small>  --> 
-	<%-- 	<small class="text-info view-content"><spring:message code="lbl.validate.msg"/></small>    --%>	
+				path="siteDetail[0].khataNumber" required="required" />	
 			<form:errors path="siteDetail[0].khataNumber"
 				cssClass="add-margin error-msg" />
 		</div>
-		<label class="col-sm-2 control-label text-right"><spring:message
+		<label class="col-sm-2 control-label text-right" style="display: none;"><spring:message
 				code="lbl.holding.no" /><span class="mandatory"></span> </label>
-		<div class="col-sm-3 add-margin">
+		<div class="col-sm-3 add-margin" style="display: none;">
 			<form:input class="form-control patternvalidation" maxlength="20"
 				data-pattern="alphanumericspecialcharacters"  id="holdingNumber"
 				path="siteDetail[0].holdingNumber" required="required" />
-		<%--  	<small class="text-info view-content"><spring:message code="lbl.values.separated.comma"/></small>   --%>
-	<%-- 	<small class="text-info view-content"><spring:message code="lbl.validate.msg"/></small>   --%> 
 			<form:errors path="siteDetail[0].holdingNumber"
 				cssClass="add-margin error-msg"/>
 		</div>
@@ -170,7 +166,7 @@
 
 	<div class="form-group">
 		<label class="col-sm-3 control-label text-right"><spring:message
-				code="lbl.street.address1" /> </label>
+				code="lbl.street.address" /> </label>
 		<div class="col-sm-3 add-margin">
 			<form:input class="form-control patternvalidation" maxlength="120"
 				data-pattern="alphanumericspecialcharacters" id="streetaddress1"
@@ -178,9 +174,9 @@
 			<form:errors path="siteDetail[0].streetaddress1"
 				cssClass="add-margin error-msg" />
 		</div>
-		<label class="col-sm-2 control-label text-right"><spring:message
+		<label class="col-sm-2 control-label text-right" style="display: none;"><spring:message
 				code="lbl.street.address2" /> </label>
-		<div class="col-sm-3 add-margin">
+		<div class="col-sm-3 add-margin" style="display: none;">
 			<form:input class="form-control patternvalidation" maxlength="120"
 				data-pattern="alphanumericspecialcharacters" id="streetaddress2"
 				path="siteDetail[0].streetaddress2" />
@@ -280,7 +276,7 @@
 		</div>
 	</div> --%>
 
-<div class="form-group">
+	<div class="form-group" style="display: none;">
 		<label class="col-sm-3 control-label text-right"><spring:message
 				code="lbl.town.plan.zone" /></label>
 		<div class="col-sm-3 add-margin">
@@ -332,7 +328,7 @@
 					cssClass="add-margin error-msg" />
 			</div>
 	</div>
-	<div class="form-group">
+	<div class="form-group" style="display: none;">
 			<label class="col-sm-3 control-label text-right"><spring:message
 				code="lbl.charitable.trust" /></label>
 			<div class="col-sm-3 add-margin">
@@ -354,10 +350,10 @@
 	</div>
 	<div class="form-group">
 		
-		<label class="col-sm-3 control-label text-right"><spring:message
+		<label class="col-sm-3 control-label text-right" style="display: none;"><spring:message
 				code="lbl.government.type" /></label>
-		<div class="col-sm-3 add-margin">
-			<%-- <form:radiobuttons items="${governmentTypeList}" path="governmentType"/> --%>
+		<div class="col-sm-3 add-margin" style="display: none;">
+			<form:radiobuttons items="${governmentTypeList}" path="governmentType"/>
 			<c:forEach items="${governmentTypeList}" var="govType">
 			<div class="radio">
 				<c:choose>

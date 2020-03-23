@@ -247,5 +247,11 @@ public class ResponseAtomReconcilation {
         this.udf9 = udf9;
     }
 
-
+	@Override
+	public String toString() {
+		return "ResponseAtomReconcilation [merchantID=" + merchantID + ", merchantTxnID=" + merchantTxnID + ", amt="
+				+ amt + ", verified=" + verified + ", bid=" + bid + ", bankname=" + bankname + ", atomtxnId="
+				+ atomtxnId + ", discriminator=" + discriminator + ", cardNumber=" + cardNumber + ", surcharge="
+				+ surcharge + ", txnDate=" + txnDate + ", udf9=" + udf9 + "]";
+	}
 }

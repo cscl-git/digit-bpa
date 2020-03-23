@@ -108,8 +108,8 @@ public final class ApplicationConstant {
     public static final String DOT = ".";
     
     public static final String STATE_TENANTID = "state";
+    public static final String CHANDIGARH_TENANTID = "chandigarh";
 
 
-    private ApplicationConstant() {
-    }
+    private ApplicationConstant() {}
 }

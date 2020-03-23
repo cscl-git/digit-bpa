@@ -59,6 +59,8 @@ import org.egov.common.entity.edcr.Plan;
 import org.egov.common.entity.edcr.Result;
 import org.egov.common.entity.edcr.ScrutinyDetail;
 import org.egov.edcr.constants.DxfFileConstants;
+import org.egov.edcr.service.cdg.CDGAConstant;
+import org.egov.edcr.service.cdg.CDGAdditionalService;
 import org.egov.infra.utils.StringUtils;
 import org.springframework.stereotype.Service;
 
@@ -78,6 +80,10 @@ public class SegregatedToilet extends FeatureProcess {
 
     @Override
     public Plan process(Plan pl) {
+    	
+    	boolean isNotApplicable=true;//is not applicable
+    	if(isNotApplicable)
+    		return pl;
 
         ScrutinyDetail scrutinyDetail = new ScrutinyDetail();
         scrutinyDetail.setKey("Common_Segregated Toilet");
@@ -88,7 +94,7 @@ public class SegregatedToilet extends FeatureProcess {
         scrutinyDetail.addColumnHeading(5, STATUS);
 
         Map<String, String> details = new HashMap<>();
-        details.put(RULE_NO, RULE_59_10);
+        details.put(RULE_NO, CDGAdditionalService.getByLaws(pl, CDGAConstant.TOILET));
 
         BigDecimal minDimension = BigDecimal.ZERO;
         BigDecimal maxHeightOfBuilding = BigDecimal.ZERO;

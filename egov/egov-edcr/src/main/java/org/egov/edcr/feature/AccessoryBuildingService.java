@@ -45,6 +45,8 @@
  *  In case of any queries, you can reach eGovernments Foundation at contact@egovernments.org.
  */
 
+// debjit
+
 package org.egov.edcr.feature;
 
 import java.math.BigDecimal;
@@ -58,10 +60,15 @@ import org.egov.common.entity.edcr.CulDeSacRoad;
 import org.egov.common.entity.edcr.Lane;
 import org.egov.common.entity.edcr.NonNotifiedRoad;
 import org.egov.common.entity.edcr.NotifiedRoad;
+import org.egov.common.entity.edcr.OccupancyTypeHelper;
 import org.egov.common.entity.edcr.Plan;
 import org.egov.common.entity.edcr.Result;
 import org.egov.common.entity.edcr.ScrutinyDetail;
+import org.egov.edcr.constants.DxfFileConstants;
+import org.egov.edcr.service.cdg.CDGAConstant;
+import org.egov.edcr.service.cdg.CDGAdditionalService;
 import org.egov.edcr.utility.DcrConstants;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Service;
 
@@ -81,36 +88,73 @@ public class AccessoryBuildingService extends FeatureProcess{
     private static final String MIN_DIS_CULDESAC_ROAD_FROM_ACC_BLDG = "Minimum distance from accessory building to culdesac road";
     private static final String MIN_DIS_LANE_ROAD_FROM_ACC_BLDG = "Minimum distance from accessory building to lane road";
     private static final String SUBRULE_88_5_DESC = "Minimum distance from accessory block %s to plot boundary";
+    
+    public static final String REQUIRED_WIDTH_DESC = "Back courtyard construction width <= %s";
+    public static final String REQUIRED_HEIGHT_DESC = "Back courtyard construction height <= %s";
+	public static final String PROVIDED_WIDTH_DESC = "Back courtyard construction width %s";
+	public static final String PROVIDED_HEIGHT_DESC = "Back courtyard construction height %s";
+	
+	@Autowired
+    private CDGAdditionalService  cDGAdditionalService;
 
     @Override
-    public Plan validate(Plan plan) {/*
-                                      * HashMap<String, String> errors = new HashMap<>(); if (plan != null &&
-                                      * !plan.getAccessoryBlocks().isEmpty()) { for (AccessoryBlock accessoryBlock :
-                                      * plan.getAccessoryBlocks()) { if (accessoryBlock.getAccessoryBuilding() != null &&
-                                      * accessoryBlock.getAccessoryBuilding().getHeight().compareTo(BigDecimal.valueOf(0)) == 0) {
-                                      * errors.put(String.format(DcrConstants.ACCESSORRY_BLK_HGHT, accessoryBlock.getNumber()),
-                                      * edcrMessageSource.getMessage(DcrConstants.OBJECTNOTDEFINED, new
-                                      * String[]{String.format(DcrConstants.ACCESSORRY_BLK_HGHT, accessoryBlock.getNumber())},
-                                      * LocaleContextHolder.getLocale())); plan.addErrors(errors); } } boolean
-                                      * shortestDistanceDefined = false; if (!plan.getNotifiedRoads().isEmpty()) for (NotifiedRoad
-                                      * notifiedRoad : plan.getNotifiedRoads()) { for (BigDecimal shortestDistanceToRoad :
-                                      * notifiedRoad.getDistanceFromAccessoryBlock()) { if
-                                      * (shortestDistanceToRoad.compareTo(BigDecimal.ZERO) > 0) { shortestDistanceDefined = true;
-                                      * break; } } } if (!plan.getNonNotifiedRoads().isEmpty()) for (NonNotifiedRoad
-                                      * nonNotifiedRoad : plan.getNonNotifiedRoads()) { for (BigDecimal shortestDistanceToRoad :
-                                      * nonNotifiedRoad.getDistanceFromAccessoryBlock()) if
-                                      * (shortestDistanceToRoad.compareTo(BigDecimal.ZERO) > 0) { shortestDistanceDefined = true;
-                                      * break; } } if (!plan.getLaneRoads().isEmpty()) for (Lane laneRoad : plan.getLaneRoads()) {
-                                      * for (BigDecimal shortestDistanceToRoad : laneRoad.getDistanceFromAccessoryBlock()) if
-                                      * (shortestDistanceToRoad.compareTo(BigDecimal.ZERO) > 0) { shortestDistanceDefined = true;
-                                      * break; } } if (!plan.getCuldeSacRoads().isEmpty()) for (CulDeSacRoad culdSac :
-                                      * plan.getCuldeSacRoads()) { for (BigDecimal shortestDistanceToRoad :
-                                      * culdSac.getDistanceFromAccessoryBlock()) if
-                                      * (shortestDistanceToRoad.compareTo(BigDecimal.ZERO) > 0) { shortestDistanceDefined = true;
-                                      * break; } } if (!shortestDistanceDefined) { errors.put(DcrConstants.SHORTESTDISTANCETOROAD,
-                                      * DcrConstants.SHORTESTDISTANCETOROAD + " not defined "); plan.addErrors(errors); } }
-                                      * validateMinimumDistanceOfAccBlkToPlotBndry(plan, errors);
-                                      */
+    public Plan validate(Plan plan) {
+        HashMap<String, String> errors = new HashMap<>();
+        if (plan != null && !plan.getAccessoryBlocks().isEmpty()) {
+            for (AccessoryBlock accessoryBlock : plan.getAccessoryBlocks()) {
+                if (accessoryBlock.getAccessoryBuilding() != null && accessoryBlock.getAccessoryBuilding().getHeight().compareTo(BigDecimal.valueOf(0)) == 0) {
+                    errors.put(String.format(DcrConstants.ACCESSORRY_BLK_HGHT, accessoryBlock.getNumber()),
+                            edcrMessageSource.getMessage(DcrConstants.OBJECTNOTDEFINED,
+                                    new String[]{String.format(DcrConstants.ACCESSORRY_BLK_HGHT, accessoryBlock.getNumber())},
+                                    LocaleContextHolder.getLocale()));
+                    plan.addErrors(errors);
+
+                }
+            }
+            // CSCL comment start
+            /*boolean shortestDistanceDefined = false;
+            if (!plan.getNotifiedRoads().isEmpty())
+                for (NotifiedRoad notifiedRoad : plan.getNotifiedRoads()) {
+                    for (BigDecimal shortestDistanceToRoad : notifiedRoad.getDistanceFromAccessoryBlock()) {
+                        if (shortestDistanceToRoad.compareTo(BigDecimal.ZERO) > 0) {
+                            shortestDistanceDefined = true;
+                            break;
+                        }
+                    }
+                }
+            if (!plan.getNonNotifiedRoads().isEmpty())
+                for (NonNotifiedRoad nonNotifiedRoad : plan.getNonNotifiedRoads()) {
+                    for (BigDecimal shortestDistanceToRoad : nonNotifiedRoad.getDistanceFromAccessoryBlock())
+                        if (shortestDistanceToRoad.compareTo(BigDecimal.ZERO) > 0) {
+                            shortestDistanceDefined = true;
+                            break;
+                        }
+                }
+            if (!plan.getLaneRoads().isEmpty())
+                for (Lane laneRoad : plan.getLaneRoads()) {
+                    for (BigDecimal shortestDistanceToRoad : laneRoad.getDistanceFromAccessoryBlock())
+                        if (shortestDistanceToRoad.compareTo(BigDecimal.ZERO) > 0) {
+                            shortestDistanceDefined = true;
+                            break;
+                        }
+                }
+            if (!plan.getCuldeSacRoads().isEmpty())
+                for (CulDeSacRoad culdSac : plan.getCuldeSacRoads()) {
+                    for (BigDecimal shortestDistanceToRoad : culdSac.getDistanceFromAccessoryBlock())
+                        if (shortestDistanceToRoad.compareTo(BigDecimal.ZERO) > 0) {
+                            shortestDistanceDefined = true;
+                            break;
+                        }
+                }
+
+            if (!shortestDistanceDefined) {
+                errors.put(DcrConstants.SHORTESTDISTANCETOROAD, 
+                		DcrConstants.SHORTESTDISTANCETOROAD + " not defined ");
+                plan.addErrors(errors);
+            }*/
+            // CSCL comment end
+        }
+        validateMinimumDistanceOfAccBlkToPlotBndry(plan, errors);
         return plan;
     }
 
@@ -130,18 +174,106 @@ public class AccessoryBuildingService extends FeatureProcess{
 
 
     @Override
-    public Plan process(Plan plan) {/*
-                                     * validate(plan); processAreaOfAccessoryBlock(plan); processHeightOfAccessoryBlock(plan);
-                                     * processShortestDistanceOfAccBlkFromRoad(plan);
-                                     * processShortestDistanceOfAccBlkFromPlotBoundary(plan);
-                                     */
+    public Plan process(Plan plan) {
+        validate(plan);
+        // CSCL comment start
+        /*processAreaOfAccessoryBlock(plan);
+        processHeightOfAccessoryBlock(plan);
+        processShortestDistanceOfAccBlkFromRoad(plan);
+        processShortestDistanceOfAccBlkFromPlotBoundary(plan);*/
+        // CSCL comment end
+        
+        // CSCL add start
+        processHeightAndDistanceOfAccessoryBlock(plan);
+        // CSCL add end
         return plan;
+    }
+    
+    private void processHeightAndDistanceOfAccessoryBlock(Plan plan) {
+        ScrutinyDetail scrutinyDetail1 = new ScrutinyDetail();
+        scrutinyDetail1.addColumnHeading(1, RULE_NO);
+        scrutinyDetail1.addColumnHeading(2, DESCRIPTION);
+        scrutinyDetail1.addColumnHeading(3, REQUIRED);
+        scrutinyDetail1.addColumnHeading(4, PROVIDED);
+        scrutinyDetail1.addColumnHeading(5, STATUS);
+        scrutinyDetail1.setKey("Common_Construction in back courtyard - Maximum Height");
+        
+        ScrutinyDetail scrutinyDetail2 = new ScrutinyDetail();
+        scrutinyDetail2.addColumnHeading(1, RULE_NO);
+        scrutinyDetail2.addColumnHeading(2, DESCRIPTION);
+        scrutinyDetail2.addColumnHeading(3, REQUIRED);
+        scrutinyDetail2.addColumnHeading(4, PROVIDED);
+        scrutinyDetail2.addColumnHeading(5, STATUS);
+        scrutinyDetail2.setKey("Common_Construction in back courtyard - Minimum distance from plot boundary");
+        if (plan != null && !plan.getAccessoryBlocks().isEmpty()) {
+        	OccupancyTypeHelper occupancyTypeHelper = plan.getVirtualBuilding() != null
+	                ? plan.getVirtualBuilding().getMostRestrictiveFarHelper()
+	                : null;
+	        String suboccTypeCode = occupancyTypeHelper.getSubtype().getCode();
+	        Map<String, String> keyArrgument = new HashMap<String, String>();
+	        keyArrgument.put(CDGAdditionalService.OCCUPENCY_CODE, suboccTypeCode);
+	        keyArrgument.put(CDGAdditionalService.SECTOR, plan.getPlanInfoProperties().get(DxfFileConstants.SECTOR_NUMBER));
+	        keyArrgument.put(CDGAdditionalService.PLOT_TYPE, plan.getPlanInfoProperties().get(DxfFileConstants.PLOT_TYPE));
+	        keyArrgument.put(CDGAdditionalService.PLOT_NO, plan.getPlanInfoProperties().get(DxfFileConstants.PLOT_NO));
+	        BigDecimal exptectedHeight = BigDecimal.ZERO;
+	        BigDecimal exptectedDistance = BigDecimal.ZERO;
+	        Map<String, String> featureValues = cDGAdditionalService.getFeatureValue(CDGAConstant.BACK_YARD_CONSTRUCTION, keyArrgument);
+	      //  exptectedDistance = new BigDecimal(featureValues.get(CDGAdditionalService.BACK_COURTYARD_CONSTRUCTION_WIDTH));
+	      //  exptectedHeight = new BigDecimal(featureValues.get(CDGAdditionalService.BACK_COURTYARD_CONSTRUCTION_HEIGHT));   
+	        exptectedDistance = new BigDecimal("2.92");
+	        exptectedHeight = new BigDecimal("3.35");   
+	        
+            for (AccessoryBlock accessoryBlock : plan.getAccessoryBlocks()) {
+            	BigDecimal accBlockHeight = accessoryBlock.getAccessoryBuilding().getHeight();
+            	boolean valid = false;
+            	if(exptectedHeight != null && exptectedHeight.compareTo(BigDecimal.valueOf(0)) > 0
+            			&& accessoryBlock.getAccessoryBuilding() != null 
+            				&& accessoryBlock.getAccessoryBuilding().getHeight() != null 
+                				&& accessoryBlock.getAccessoryBuilding().getHeight().compareTo(BigDecimal.valueOf(0)) > 0) {
+            		if (accessoryBlock.getAccessoryBuilding().getHeight().compareTo(exptectedHeight) <= 0) {
+                        valid = true;
+                    }
+                    if (valid) {
+                       
+                        setReportOutputDetails(plan, CDGAdditionalService.getByLaws(occupancyTypeHelper, CDGAConstant.CONSTRUCTION_IN_BACK_COURTYARD), String.format(SUBRULE_88_3_DESC, accessoryBlock.getNumber()), exptectedHeight + DcrConstants.IN_METER,
+                                accessoryBlock.getAccessoryBuilding().getHeight() + DcrConstants.IN_METER, Result.Accepted.getResultVal(), scrutinyDetail1);
+                    } else {
+                        
+                        setReportOutputDetails(plan, CDGAdditionalService.getByLaws(occupancyTypeHelper, CDGAConstant.CONSTRUCTION_IN_BACK_COURTYARD), String.format(SUBRULE_88_3_DESC, accessoryBlock.getNumber()), exptectedHeight + DcrConstants.IN_METER,
+                                accessoryBlock.getAccessoryBuilding().getHeight() + DcrConstants.IN_METER, Result.Not_Accepted.getResultVal(), scrutinyDetail1);
+
+                    }
+            	}
+            	
+            	if(exptectedDistance != null 
+            			&& exptectedDistance.compareTo(BigDecimal.valueOf(0)) > 0
+            				&& accessoryBlock.getAccessoryBuilding() != null 
+            					&& !accessoryBlock.getAccessoryBuilding().getDistanceFromPlotBoundary().isEmpty()) {
+                    BigDecimal minimumAccBlkDisFromPlotBoundary = accessoryBlock.getAccessoryBuilding().getDistanceFromPlotBoundary().get(0);
+                    for (BigDecimal disOfAccBlkFromPlotBndry : accessoryBlock.getAccessoryBuilding().getDistanceFromPlotBoundary()) {
+                        if (minimumAccBlkDisFromPlotBoundary.compareTo(disOfAccBlkFromPlotBndry) > 0) {
+                            minimumAccBlkDisFromPlotBoundary = disOfAccBlkFromPlotBndry;
+                        }
+                    }
+                    if (minimumAccBlkDisFromPlotBoundary.compareTo(BigDecimal.valueOf(1)) >= 0) {
+                        valid = true;
+                    }
+                    if (valid) {
+                        setReportOutputDetails(plan, CDGAdditionalService.getByLaws(occupancyTypeHelper, CDGAConstant.CONSTRUCTION_IN_BACK_COURTYARD), String.format(SUBRULE_88_5_DESC, accessoryBlock.getNumber()), exptectedDistance + DcrConstants.IN_METER,
+                                minimumAccBlkDisFromPlotBoundary + DcrConstants.IN_METER, Result.Accepted.getResultVal(), scrutinyDetail2);
+                    } else {
+                        setReportOutputDetails(plan, CDGAdditionalService.getByLaws(occupancyTypeHelper, CDGAConstant.CONSTRUCTION_IN_BACK_COURTYARD), String.format(SUBRULE_88_5_DESC, accessoryBlock.getNumber()), exptectedDistance + DcrConstants.IN_METER,
+                                minimumAccBlkDisFromPlotBoundary + DcrConstants.IN_METER, Result.Not_Accepted.getResultVal(), scrutinyDetail2);
+                    }
+            	}                
+            }
+        }
     }
 
     private void processShortestDistanceOfAccBlkFromPlotBoundary(Plan plan) {
         String subRule = SUBRULE_88_5;
         ScrutinyDetail scrutinyDetail3 = new ScrutinyDetail();
-        scrutinyDetail3.setKey("Common_Accessory Block - Minimum distance from plot boundary");
+        scrutinyDetail3.setKey("Common_Construction in back courtyard - Minimum distance from plot boundary");
         scrutinyDetail3.addColumnHeading(1, RULE_NO);
         scrutinyDetail3.addColumnHeading(2, DESCRIPTION);
         scrutinyDetail3.addColumnHeading(3, REQUIRED);
@@ -303,7 +435,7 @@ public class AccessoryBuildingService extends FeatureProcess{
         scrutinyDetail1.addColumnHeading(3, REQUIRED);
         scrutinyDetail1.addColumnHeading(4, PROVIDED);
         scrutinyDetail1.addColumnHeading(5, STATUS);
-        scrutinyDetail1.setKey("Common_Accessory Block - Maximum Height");
+        scrutinyDetail1.setKey("Common_Construction in back courtyard - Maximum Height");
         String subRuleDesc = SUBRULE_88_3_DESC;
         String subRule = SUBULE_88_3;
         if (plan != null && !plan.getAccessoryBlocks().isEmpty()) {

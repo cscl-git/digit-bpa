@@ -262,7 +262,7 @@ public class ApplicationBpaBillService extends BillServiceInterface {
 	    		amount = amount.add(BigDecimal.valueOf(feeMap.getAmount()));
     	}
         else
-        	amount = applicationBpaService.getTotalFeeAmountByPassingServiceTypeAndAmenities(serviceTypeList);	
+        	amount = applicationBpaService.getTotalFeeAmountByPassingServiceTypeAndAmenities(application);	
         	
         feeDetails.put(bpaAdmissionFees.get(0).getBpaFeeCommon().getCode(), application.getAdmissionfeeAmount().add(amount));
         if (installment != null) {

@@ -106,6 +106,7 @@ import org.egov.bpa.transaction.service.SearchBpaApplicationService;
 import org.egov.bpa.transaction.service.collection.GenericBillGeneratorService;
 import org.egov.bpa.utils.BpaConstants;
 import org.egov.bpa.web.controller.transaction.BpaGenericApplicationController;
+import org.egov.common.entity.edcr.Plan;
 import org.egov.commons.entity.Source;
 import org.egov.commons.service.SubOccupancyService;
 import org.egov.eis.entity.Assignment;
@@ -446,28 +447,21 @@ public class CitizenApplicationController extends BpaGenericApplicationControlle
     
         applicationBpaService.buildExistingAndProposedBuildingDetails(bpaApplication);
         bpaUtils.saveOrUpdateBoundary(bpaApplication);
-        /*
-         * if (bpaApplicationValidationService.validateBuildingDetails( bpaApplication, model)) {
-         * applicationBpaService.buildExistingAndProposedBuildingDetails( bpaApplication); prepareCommonModelAttribute(model,
-         * bpaApplication.isCitizenAccepted()); return loadNewForm(bpaApplication, model,
-         * bpaApplication.getServiceType().getCode()); }
-         */
-
-        String occupancyName;
-
-        if (bpaApplication.getPermitOccupanciesTemp().size() == 1)
-            occupancyName = bpaApplication.getPermitOccupanciesTemp().get(0).getName();
-        else if (applicationBpaService.isOccupancyContains(bpaApplication.getPermitOccupanciesTemp(), BpaConstants.INDUSTRIAL))
-            occupancyName = BpaConstants.INDUSTRIAL;
-        else
-            occupancyName = BpaConstants.MIXED_OCCUPANCY;
+        
 
         if (!isEdcrIntegrationRequire && riskBasedAppTypes.contains(bpaApplication.getApplicationType())) {
-            ApplicationSubType applicationType = bpaUtils.getBuildingType(
-                    bpaApplication.getSiteDetail().get(0).getExtentinsqmts(),
-                    bpaUtils.getBuildingHasHighestHeight(bpaApplication.getBuildingDetail())
-                            .getHeightFromGroundWithOutStairRoom(),
-                    occupancyName);
+        	String rootBoundaryType = BpaConstants.URBAN;
+        	String plotType = BpaConstants.ABOVE_TWO_KANAL;
+        	Plan plan = applicationBpaService.getPlanInfo(bpaApplication.geteDcrNumber());	    		
+    		if(null!=plan) {
+    			if(null != plan.getPlanInfoProperties().get(BpaConstants.ROOT_BOUNDARY_TYPE)) {
+    				rootBoundaryType = plan.getPlanInfoProperties().get(BpaConstants.ROOT_BOUNDARY_TYPE);
+    			}
+    			if(null != plan.getPlanInfoProperties().get(BpaConstants.PLOT_TYPE)) {
+    				plotType = plan.getPlanInfoProperties().get(BpaConstants.PLOT_TYPE);
+    			}
+    		}
+            ApplicationSubType applicationType = bpaUtils.getApplicationType(plotType, rootBoundaryType);
             bpaApplication.setApplicationType(applicationType);
         }
         Long approvalPosition = null;
@@ -519,12 +513,10 @@ public class CitizenApplicationController extends BpaGenericApplicationControlle
                     }
             }
         } 
+        
         ApplicationBpaFeeCalculation feeCalculation = (ApplicationBpaFeeCalculation) specificNoticeService
                 .find(PermitFeeCalculationService.class, specificNoticeService.getCityDetails());
-        if (bpaUtils.isApplicationFeeCollectionRequired())
-            bpaApplication.setAdmissionfeeAmount(feeCalculation.setAdmissionFeeAmount(bpaApplication, new ArrayList<>()));
-        else
-            bpaApplication.setAdmissionfeeAmount(BigDecimal.valueOf(0));
+        bpaApplication.setAdmissionfeeAmount(feeCalculation.setAdmissionFeeAmount(bpaApplication, new ArrayList<>()));
         
         nocIntegrationService.pushNocRequest(bpaApplication);
 
@@ -551,6 +543,9 @@ public class CitizenApplicationController extends BpaGenericApplicationControlle
             }
         }
 
+        if (workFlowAction != null && workFlowAction.equals(WF_LBE_SUBMIT_BUTTON))
+            bpaSmsAndEmailService.sendSMSAndEmail(bpaApplicationRes, null, null);
+        
         // Will redirect to collection, then after collection success will
         // forward to official
         if (workFlowAction != null && workFlowAction.equals(WF_LBE_SUBMIT_BUTTON) && onlinePaymentEnable

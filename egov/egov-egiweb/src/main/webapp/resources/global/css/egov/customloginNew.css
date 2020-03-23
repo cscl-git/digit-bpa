@@ -72,7 +72,7 @@
 }
 
 .btn-login-new{
-	background-color:#FE7A51 !important;
+	background-color:#ff790e !important;
 	height: 50px !important;
 }
 
@@ -127,8 +127,8 @@
 	bottom:0;
 	left:0;
 	right:0;
-	background:#4A90E2;
-	opacity: 0.8;
+	background: #000000;
+	opacity: 0.6;
 	z-index: 2
 }
 
@@ -178,7 +178,7 @@
 }
 
 .forgot-password-text{
-	color: #FE7A51;
+	color: #ff790e;
 	font-size: 14px;
 	font-weight: 400;
 	line-height: 17px;

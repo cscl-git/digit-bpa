@@ -42,6 +42,7 @@ import org.egov.common.entity.edcr.VirtualBuilding;
 import org.egov.common.entity.edcr.VirtualBuildingReport;
 import org.egov.edcr.autonumber.DcrApplicationNumberGenerator;
 import org.egov.edcr.autonumber.OCPlanScrutinyNumberGenerator;
+import org.egov.edcr.constants.DxfFileConstants;
 import org.egov.edcr.entity.ApplicationType;
 import org.egov.edcr.entity.EdcrApplication;
 import org.egov.edcr.entity.EdcrApplicationDetail;
@@ -51,6 +52,7 @@ import org.egov.infra.config.core.ApplicationThreadLocals;
 import org.egov.infra.reporting.util.ReportUtil;
 import org.egov.infra.utils.DateUtils;
 import org.joda.time.LocalDate;
+import org.python.icu.impl.Trie2.ValueMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -221,7 +223,8 @@ public class PlanReportService {
                 if (STATUS.equalsIgnoreCase(columnHeading.name)) {
                     columnWidth = statusColumnSize.intValue();
                 }
-                frb.addColumn(columnHeading.name, columnHeading.name, String.class.getName(), columnWidth);
+               // if(!"Byelaw".equalsIgnoreCase(columnHeading.name))// disable  ByLaw from report
+                	frb.addColumn(columnHeading.name, columnHeading.name, String.class.getName(), columnWidth);
             }
             frb.setMargins(0, 0, 0, 0);
             frb.setUseFullPageWidth(true);
@@ -541,10 +544,12 @@ public class PlanReportService {
 
         if (plan.getVirtualBuilding() != null && !plan.getVirtualBuilding().getOccupancyTypes().isEmpty()) {
             List<String> occupancies = new ArrayList<>();
+           // plan.getVirtualBuilding().getOccupancyTypes().forEach(occ -> occupancies.add(occ.getType().getName())); // egove 
             plan.getVirtualBuilding().getOccupancyTypes().forEach(occ -> {
             	if(occ.getType()!=null)
             		occupancies.add(occ.getType().getName());
-            		});     
+            		});   
+          
             Set<String> distinctOccupancies = new HashSet<>(occupancies);
             plan.getPlanInformation()
                     .setOccupancy(distinctOccupancies.stream().map(String::new).collect(Collectors.joining(",")));
@@ -591,8 +596,20 @@ public class PlanReportService {
         if (StringUtils.isBlank(voltages)) {
             voltages = String.valueOf(BigDecimal.ZERO) + " KV";
         }
-
+        
+        //
+      
+        
         final Map<String, Object> valuesMap = new HashMap<>();
+        
+  //raza change
+        
+        valuesMap.put("plotNumber", plan.getPlanInfoProperties().get(DxfFileConstants.PLOT_NO));
+        valuesMap.put("areaType",plan.getPlanInfoProperties().get(DxfFileConstants.PLOT_TYPE));
+        
+
+        //reza end
+        
         valuesMap.put("ulbName", ApplicationThreadLocals.getMunicipalityName());
         valuesMap.put("applicantName", dcrApplication.getApplicantName());
         valuesMap.put("licensee", dcrApplication.getArchitectInformation());
@@ -616,8 +633,8 @@ public class PlanReportService {
         valuesMap.put("blockCount",
                 plan.getBlocks() != null && !plan.getBlocks().isEmpty() ? plan.getBlocks().size() : 0);
         valuesMap.put("surrenderRoadArea", plan.getTotalSurrenderRoadArea());
-        String imageURL = ReportUtil.getImageURL("/egi/resources/global/images/digit-logo-black.png");
-        valuesMap.put("egovLogo", imageURL);
+      //  String imageURL = ReportUtil.getImageURL("/egi/resources/global/images/digit-logo-black.png");// for removing logo from pdf
+     //   valuesMap.put("egovLogo", imageURL);
         valuesMap.put("cityLogo", cityService.getCityLogoURLByCurrentTenant());
 
         if (clientSpecificSubReport) {
@@ -861,6 +878,7 @@ public class PlanReportService {
         plan.setEdcrPassed(finalReportStatus);
         InputStream exportPdf = null;
         try {
+        	
             JasperPrint generateJasperPrint = DynamicJasperHelper.generateJasperPrint(dr, new ClassicLayoutManager(),
                     ds, valuesMap);
             exportPdf = reportService.exportPdf(generateJasperPrint);

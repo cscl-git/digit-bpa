@@ -71,6 +71,9 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 public class Plan implements Serializable {
 
     private static final long serialVersionUID = 7276648029097296311L;
+    
+    // CGCL requirement
+    private String serviceType;
 
     /**
      * Plan scrutiny report status. Values true mean "Accepted" and False mean "Not Accepted". Default value false. On plan
@@ -182,7 +185,18 @@ public class Plan implements Serializable {
     
     private Gate gate;
 
-    // Used to show drawing mistakes, General errors, mistakes in following layer/color coding standard etc
+    
+    
+    
+    public String getServiceType() {
+		return serviceType;
+	}
+
+	public void setServiceType(String serviceType) {
+		this.serviceType = serviceType;
+	}
+
+	// Used to show drawing mistakes, General errors, mistakes in following layer/color coding standard etc
     private transient Map<String, String> errors = new LinkedHashMap<>();
     /**
      * The report output object. Based on type of building and occupancies,the rules are validated and rules which are considered

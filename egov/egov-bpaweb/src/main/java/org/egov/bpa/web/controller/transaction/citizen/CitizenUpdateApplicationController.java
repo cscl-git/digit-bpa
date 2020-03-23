@@ -107,6 +107,7 @@ import org.egov.bpa.web.controller.transaction.BpaGenericApplicationController;
 import org.egov.common.entity.bpa.Occupancy;
 import org.egov.common.entity.bpa.SubOccupancy;
 import org.egov.common.entity.bpa.Usage;
+import org.egov.common.entity.edcr.Plan;
 import org.egov.commons.service.SubOccupancyService;
 import org.egov.eis.entity.Assignment;
 import org.egov.infra.admin.master.entity.User;
@@ -245,27 +246,29 @@ public class CitizenUpdateApplicationController extends BpaGenericApplicationCon
 
             if (permitNocService.findByApplicationNumberAndType(application.getApplicationNumber(), code) != null)
                 nocTypeApplMap.put(code, "initiated");
-            if (nocConfig != null && nocConfig.getApplicationType().trim().equalsIgnoreCase(BpaConstants.PERMIT)
-            		&& (nocConfig.getIntegrationType().equalsIgnoreCase(NocIntegrationTypeEnum.INTERNAL.toString()) ||
-                    		(nocConfig.getIntegrationType().equalsIgnoreCase(NocIntegrationTypeEnum.THIRD_PARTY.toString())))
-                    && nocConfig.getIntegrationInitiation().equalsIgnoreCase(NocIntegrationInitiationEnum.MANUAL.toString())
-                    && edcrNocMandatory.get(nocConfig.getDepartment()).equalsIgnoreCase("YES")) {
-                nocConfigMap.put(nocConfig.getDepartment(), "initiate");
-            }
-            if (nocConfig != null && nocConfig.getApplicationType().trim().equalsIgnoreCase(BpaConstants.PERMIT)
-            		&& (nocConfig.getIntegrationType().equalsIgnoreCase(NocIntegrationTypeEnum.INTERNAL.toString()) ||
-                    		(nocConfig.getIntegrationType().equalsIgnoreCase(NocIntegrationTypeEnum.THIRD_PARTY.toString())))
-                    && nocConfig.getIntegrationInitiation().equalsIgnoreCase(NocIntegrationInitiationEnum.AUTO.toString())
-                    && edcrNocMandatory.get(nocConfig.getDepartment()).equalsIgnoreCase("YES")) {
-                nocAutoMap.put(nocConfig.getDepartment(), "autoinitiate");
-                nocAutoCount++;
-                List<User> userList = nocUsers.stream()
-                        .filter(usr -> usr.getRoles().stream()
-                                .anyMatch(usrrl -> usrrl.getName()
-                                        .equals(BpaConstants.getNocRole().get(nocConfig.getDepartment()))))
-                        .collect(Collectors.toList());
-                if (!userList.isEmpty())
-                    nocAutoUsers.add(userList.get(0));
+            if(null != edcrNocMandatory && !edcrNocMandatory.isEmpty()) {
+	            if (nocConfig != null && nocConfig.getApplicationType().trim().equalsIgnoreCase(BpaConstants.PERMIT)
+	            		&& (nocConfig.getIntegrationType().equalsIgnoreCase(NocIntegrationTypeEnum.INTERNAL.toString()) ||
+	                    		(nocConfig.getIntegrationType().equalsIgnoreCase(NocIntegrationTypeEnum.THIRD_PARTY.toString())))
+	                    && nocConfig.getIntegrationInitiation().equalsIgnoreCase(NocIntegrationInitiationEnum.MANUAL.toString())
+	                    && edcrNocMandatory.get(nocConfig.getDepartment()).equalsIgnoreCase("YES")) {
+	                nocConfigMap.put(nocConfig.getDepartment(), "initiate");
+	            }
+	            if (nocConfig != null && nocConfig.getApplicationType().trim().equalsIgnoreCase(BpaConstants.PERMIT)
+	            		&& (nocConfig.getIntegrationType().equalsIgnoreCase(NocIntegrationTypeEnum.INTERNAL.toString()) ||
+	                    		(nocConfig.getIntegrationType().equalsIgnoreCase(NocIntegrationTypeEnum.THIRD_PARTY.toString())))
+	                    && nocConfig.getIntegrationInitiation().equalsIgnoreCase(NocIntegrationInitiationEnum.AUTO.toString())
+	                    && edcrNocMandatory.get(nocConfig.getDepartment()).equalsIgnoreCase("YES")) {
+	                nocAutoMap.put(nocConfig.getDepartment(), "autoinitiate");
+	                nocAutoCount++;
+	                List<User> userList = nocUsers.stream()
+	                        .filter(usr -> usr.getRoles().stream()
+	                                .anyMatch(usrrl -> usrrl.getName()
+	                                        .equals(BpaConstants.getNocRole().get(nocConfig.getDepartment()))))
+	                        .collect(Collectors.toList());
+	                if (!userList.isEmpty())
+	                    nocAutoUsers.add(userList.get(0));
+	            }
             }
             for (PermitNocApplication pna : permitNoc) {
                 if (nocDocument.getNocDocument().getServiceChecklist().getChecklist().getCode()
@@ -504,11 +507,18 @@ public class CitizenUpdateApplicationController extends BpaGenericApplicationCon
             occupancyName = BpaConstants.MIXED_OCCUPANCY;
 
         if (!isEdcrIntegrationRequire && riskBasedAppTypes.contains(bpaApplication.getApplicationType())) {
-            ApplicationSubType applicationType = bpaUtils.getBuildingType(
-                    bpaApplication.getSiteDetail().get(0).getExtentinsqmts(),
-                    bpaUtils.getBuildingHasHighestHeight(bpaApplication.getBuildingDetail())
-                            .getHeightFromGroundWithOutStairRoom(),
-                    occupancyName);
+        	String rootBoundaryType = BpaConstants.URBAN;
+        	String plotType = BpaConstants.ABOVE_TWO_KANAL;
+        	Plan plan = applicationBpaService.getPlanInfo(bpaApplication.geteDcrNumber());	    		
+    		if(null!=plan) {
+    			if(null != plan.getPlanInfoProperties().get(BpaConstants.ROOT_BOUNDARY_TYPE)) {
+    				rootBoundaryType = plan.getPlanInfoProperties().get(BpaConstants.ROOT_BOUNDARY_TYPE);
+    			}
+    			if(null != plan.getPlanInfoProperties().get(BpaConstants.PLOT_TYPE)) {
+    				plotType = plan.getPlanInfoProperties().get(BpaConstants.PLOT_TYPE);
+    			}
+    		}
+            ApplicationSubType applicationType = bpaUtils.getApplicationType(plotType, rootBoundaryType);
             bpaApplication.setApplicationType(applicationType);
         }
         if (workFlowAction.equals(WF_SEND_BUTTON))
@@ -530,8 +540,7 @@ public class CitizenUpdateApplicationController extends BpaGenericApplicationCon
                     bpaUtils.updatePortalUserinbox(bpaApplication, bpaApplication.getOwner().getUser());
             }
         }
-        if (bpaUtils.isCitizenAcceptanceRequired() && bpaApplication.isCitizenAccepted()
-                && workFlowAction.equals(WF_LBE_SUBMIT_BUTTON))
+        if (workFlowAction.equals(WF_LBE_SUBMIT_BUTTON))
             bpaSmsAndEmailService.sendSMSAndEmail(bpaApplication, null, null);
 
         // Will redirect to collection, then after collection success will forward to official

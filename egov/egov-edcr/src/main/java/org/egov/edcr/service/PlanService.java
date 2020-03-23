@@ -8,21 +8,30 @@ import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.egov.common.entity.edcr.EdcrPdfDetail;
+import org.egov.common.entity.edcr.OccupancyTypeHelper;
 import org.egov.common.entity.edcr.Plan;
 import org.egov.common.entity.edcr.PlanFeature;
 import org.egov.common.entity.edcr.PlanInformation;
+import org.egov.common.entity.edcr.ScrutinyDetail;
 import org.egov.edcr.constants.DxfFileConstants;
 import org.egov.edcr.contract.EdcrRequest;
 import org.egov.edcr.entity.Amendment;
 import org.egov.edcr.entity.AmendmentDetails;
 import org.egov.edcr.entity.EdcrApplication;
 import org.egov.edcr.entity.EdcrApplicationDetail;
+import org.egov.edcr.feature.AccessoryBuildingService;
 import org.egov.edcr.feature.FeatureProcess;
+import org.egov.edcr.feature.FireStair;
+import org.egov.edcr.feature.GeneralStair;
+import org.egov.edcr.feature.OpenStairService;
+import org.egov.edcr.feature.PassageService;
+import org.egov.edcr.feature.Verandah;
 import org.egov.edcr.utility.DcrConstants;
 import org.egov.infra.custom.CustomImplProvider;
 import org.egov.infra.filestore.entity.FileStoreMapper;
@@ -68,17 +77,97 @@ public class PlanService {
 
 		AmendmentService repo = (AmendmentService) specificRuleService.find("amendmentService");
 		Amendment amd = repo.getAmendments();
+		Plan plan=null;
+		try {
+			plan = extractService.extract(dcrApplication.getSavedDxfFile(), amd, asOnDate,
+					featureService.getFeatures());
+		}catch (Exception e) {
+			// TODO: handle exception
+			e.getClass();
+		}
+//		if(plan==null)
+//			plan=new Plan();
+		// add serviceType for validation
+		plan.setServiceType(dcrApplication.getServiceType());
 
-		Plan plan = extractService.extract(dcrApplication.getSavedDxfFile(), amd, asOnDate,
-				featureService.getFeatures());
+		System.out.println(plan.getBlocks());
 
 		plan = applyRules(plan, amd, cityDetails);
-
+		
+		for(ScrutinyDetail scrutinyDetail:plan.getReportOutput().getScrutinyDetails()) {
+			System.out.println(scrutinyDetail.getKey()+"  "+scrutinyDetail.getDetail());
+		}
+		setEDCRmandatoryNOC(plan);
 		InputStream reportStream = generateReport(plan, amd, dcrApplication);
 		saveOutputReport(dcrApplication, reportStream, plan);
 		return plan;
 	}
 
+	private void setEDCRmandatoryNOC(Plan plan) {
+		/*if(null != plan.getPlanInfoProperties().get(DxfFileConstants.FIRE_NOC))
+			plan.getPlanInformation().setNocFireDept(plan.getPlanInfoProperties().get(DxfFileConstants.FIRE_NOC));
+		if(null != plan.getPlanInfoProperties().get(DxfFileConstants.PUB_HEALTH_7_NOC))				
+			plan.getPlanInformation().setNocPH7Dept(plan.getPlanInfoProperties().get(DxfFileConstants.PUB_HEALTH_7_NOC));
+		if(null != plan.getPlanInfoProperties().get(DxfFileConstants.TEHSILDAR_NOC))
+			plan.getPlanInformation().setNocTehsildarDept(plan.getPlanInfoProperties().get(DxfFileConstants.TEHSILDAR_NOC));
+		if(null != plan.getPlanInfoProperties().get(DxfFileConstants.PUB_HEALTH_NOC))
+			plan.getPlanInformation().setNocPHDept(plan.getPlanInfoProperties().get(DxfFileConstants.PUB_HEALTH_NOC));
+		if(null != plan.getPlanInfoProperties().get(DxfFileConstants.MANIMAJARA_NOC))
+			plan.getPlanInformation().setNocManimajaraDept(plan.getPlanInfoProperties().get(DxfFileConstants.MANIMAJARA_NOC));
+		if(null != plan.getPlanInfoProperties().get(DxfFileConstants.ROAD_2_NOC))
+			plan.getPlanInformation().setNocRoad2Dept(plan.getPlanInfoProperties().get(DxfFileConstants.ROAD_2_NOC));
+		if(null != plan.getPlanInfoProperties().get(DxfFileConstants.PAC_NOC))
+			plan.getPlanInformation().setNocPACDept(plan.getPlanInfoProperties().get(DxfFileConstants.PAC_NOC));
+		if(null != plan.getPlanInfoProperties().get(DxfFileConstants.STRUCTURE_NOC))
+			plan.getPlanInformation().setNocStructureDept(plan.getPlanInfoProperties().get(DxfFileConstants.STRUCTURE_NOC));
+		if(null != plan.getPlanInfoProperties().get(DxfFileConstants.ELECTRICAL_NOC))
+			plan.getPlanInformation().setNocElectricalDept(plan.getPlanInfoProperties().get(DxfFileConstants.ELECTRICAL_NOC));
+		if(null != plan.getPlanInfoProperties().get(DxfFileConstants.POL_CONTROL_NOC))
+			plan.getPlanInformation().setNocPollutionDept(plan.getPlanInfoProperties().get(DxfFileConstants.POL_CONTROL_NOC));*/
+		
+		plan.getPlanInformation().setNocPACDept("NO");
+		plan.getPlanInformation().setNocStructureDept("NO");
+		plan.getPlanInformation().setNocFireDept("NO");
+		plan.getPlanInformation().setNocTehsildarDept("NO");
+		plan.getPlanInformation().setNocManimajaraDept("NO");
+		plan.getPlanInformation().setNocElectricalDept("NO");
+		plan.getPlanInformation().setNocPollutionDept("NO");
+		plan.getPlanInformation().setNocPH7Dept("NO");
+		plan.getPlanInformation().setNocPHDept("NO");
+		plan.getPlanInformation().setNocRoad2Dept("NO");
+		if(null!=plan) {
+			OccupancyTypeHelper occupancyTypeHelper = plan.getVirtualBuilding() != null
+					? plan.getVirtualBuilding().getMostRestrictiveFarHelper()
+					: null;
+			String boundaryType = "";
+			if(null != plan.getPlanInfoProperties().get(DxfFileConstants.ROOT_BOUNDARY_TYPE)) {
+				boundaryType = plan.getPlanInfoProperties().get(DxfFileConstants.ROOT_BOUNDARY_TYPE);
+			}
+			if(boundaryType.equalsIgnoreCase(DxfFileConstants.URBAN)) {
+				if(DxfFileConstants.A_G.equalsIgnoreCase(occupancyTypeHelper.getSubtype().getCode())
+					|| DxfFileConstants.A_P.equalsIgnoreCase(occupancyTypeHelper.getSubtype().getCode())){
+					plan.getPlanInformation().setNocPACDept("YES");
+					plan.getPlanInformation().setNocStructureDept("YES");
+				}else {
+					plan.getPlanInformation().setNocPACDept("YES");
+					plan.getPlanInformation().setNocFireDept("YES");
+					plan.getPlanInformation().setNocStructureDept("YES");
+					plan.getPlanInformation().setNocElectricalDept("YES");
+					plan.getPlanInformation().setNocPollutionDept("YES");
+					plan.getPlanInformation().setNocPH7Dept("YES");
+				}
+			}else if(boundaryType.equalsIgnoreCase(DxfFileConstants.RURAL)){
+				plan.getPlanInformation().setNocFireDept("YES");
+				plan.getPlanInformation().setNocTehsildarDept("YES");
+				plan.getPlanInformation().setNocManimajaraDept("YES");
+				plan.getPlanInformation().setNocElectricalDept("YES");
+				plan.getPlanInformation().setNocPollutionDept("YES");
+				plan.getPlanInformation().setNocPHDept("YES");
+				plan.getPlanInformation().setNocRoad2Dept("YES");
+			}
+		}
+	}
+	
 	public void savePlanDetail(Plan plan, EdcrApplicationDetail detail) {
 
 		if (LOG.isInfoEnabled())
@@ -99,6 +188,42 @@ public class PlanService {
 
 	}
 
+	// method for returning list of applicable feature rule
+	private List<PlanFeature> getPlanFeatures(Plan plan) {
+		List<PlanFeature> serviceTypeFeatures = featureService.getFeatures();
+		ListIterator<PlanFeature> features = serviceTypeFeatures.listIterator();
+
+		switch (plan.getServiceType()) {
+		case DxfFileConstants.NEW_CONSTRUCTION:
+
+			break;
+		case DxfFileConstants.ALTERATION:
+
+			while (features.hasNext()) {
+
+				PlanFeature feature = features.next();
+				
+				if (feature.getRuleClass().isAssignableFrom(GeneralStair.class)//1. All Staircases
+						|| feature.getRuleClass().isAssignableFrom(org.egov.edcr.feature.SpiralStair.class)
+						|| feature.getRuleClass().isAssignableFrom(FireStair.class)
+						|| feature.getRuleClass().isAssignableFrom(OpenStairService.class)
+						|| feature.getRuleClass().isAssignableFrom(Verandah.class)//2.  Light and Ventilation
+						|| feature.getRuleClass().isAssignableFrom(PassageService.class)//3. Width of passage corridor
+						|| feature.getRuleClass().isAssignableFrom(AccessoryBuildingService.class)//4. Construction in rear courtyard
+						) {
+					System.out.println(feature.getRuleClass());
+					features.remove();
+				}
+			}
+
+			break;
+		default:
+			break;
+		}
+
+		return serviceTypeFeatures;
+	}
+
 	private Plan applyRules(Plan plan, Amendment amd, Map<String, String> cityDetails) {
 
 		// check whether valid amendments are present
@@ -111,7 +236,8 @@ public class PlanService {
 			amd.getDetails().toArray(a);
 		}
 
-		for (PlanFeature ruleClass : featureService.getFeatures()) {
+		// for (PlanFeature ruleClass : featureService.getFeatures()) {
+		for (PlanFeature ruleClass : getPlanFeatures(plan)) {
 
 			FeatureProcess rule = null;
 			String str = ruleClass.getRuleClass().getSimpleName();
@@ -251,7 +377,7 @@ public class PlanService {
 
 			ArrayList<org.egov.edcr.entity.EdcrPdfDetail> edcrPdfDetails = new ArrayList<>();
 
-			if (plan.getEdcrPdfDetails() != null && !plan.getEdcrPdfDetails().isEmpty() ) {
+			if (plan.getEdcrPdfDetails() != null && !plan.getEdcrPdfDetails().isEmpty()) {
 				for (EdcrPdfDetail edcrPdfDetail : plan.getEdcrPdfDetails()) {
 					org.egov.edcr.entity.EdcrPdfDetail pdfDetail = new org.egov.edcr.entity.EdcrPdfDetail();
 					pdfDetail.setLayer(edcrPdfDetail.getLayer());

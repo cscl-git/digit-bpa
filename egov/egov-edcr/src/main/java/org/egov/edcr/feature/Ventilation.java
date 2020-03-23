@@ -58,9 +58,13 @@ import org.egov.common.entity.edcr.Block;
 import org.egov.common.entity.edcr.Floor;
 import org.egov.common.entity.edcr.Measurement;
 import org.egov.common.entity.edcr.Occupancy;
+import org.egov.common.entity.edcr.OccupancyTypeHelper;
 import org.egov.common.entity.edcr.Plan;
 import org.egov.common.entity.edcr.Result;
 import org.egov.common.entity.edcr.ScrutinyDetail;
+import org.egov.edcr.constants.DxfFileConstants;
+import org.egov.edcr.service.cdg.CDGAConstant;
+import org.egov.edcr.service.cdg.CDGAdditionalService;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -74,6 +78,83 @@ public class Ventilation extends FeatureProcess {
 	public Plan validate(Plan pl) {
 		return pl;
 	}
+//
+//	@Override
+//	public Plan process(Plan pl) {
+//		for (Block b : pl.getBlocks()) {
+//			ScrutinyDetail scrutinyDetail = new ScrutinyDetail();
+//			scrutinyDetail.setKey("Common_Ventilation");
+//			scrutinyDetail.addColumnHeading(1, RULE_NO);
+//			scrutinyDetail.addColumnHeading(2, DESCRIPTION);
+//			scrutinyDetail.addColumnHeading(3, REQUIRED);
+//			scrutinyDetail.addColumnHeading(4, PROVIDED);
+//			scrutinyDetail.addColumnHeading(5, STATUS);
+//
+//			if (b.getBuilding() != null && b.getBuilding().getFloors() != null
+//					&& !b.getBuilding().getFloors().isEmpty()) {
+//
+//				for (Floor f : b.getBuilding().getFloors()) {
+//					Map<String, String> details = new HashMap<>();
+//					details.put(RULE_NO, RULE_43);
+//					details.put(DESCRIPTION, LIGHT_VENTILATION_DESCRIPTION);
+//
+//					if (f.getLightAndVentilation() != null && f.getLightAndVentilation().getMeasurements() != null
+//							&& !f.getLightAndVentilation().getMeasurements().isEmpty()) {
+//
+//						BigDecimal totalVentilationArea = f.getLightAndVentilation().getMeasurements().stream()
+//								.map(Measurement::getArea).reduce(BigDecimal.ZERO, BigDecimal::add);
+//						BigDecimal totalCarpetArea = f.getOccupancies().stream().map(Occupancy::getCarpetArea)
+//								.reduce(BigDecimal.ZERO, BigDecimal::add);
+//
+//						if (totalVentilationArea.compareTo(BigDecimal.ZERO) > 0) {
+//							if (totalVentilationArea.compareTo(totalCarpetArea.divide(BigDecimal.valueOf(8)).setScale(2,
+//									BigDecimal.ROUND_HALF_UP)) >= 0) {
+//								details.put(REQUIRED, "Minimum 1/8th of the floor area ");
+//								details.put(PROVIDED, "Ventilation area " + totalVentilationArea + " of Carpet Area   "
+//										+ totalCarpetArea + " at floor " + f.getNumber());
+//								details.put(STATUS, Result.Accepted.getResultVal());
+//								scrutinyDetail.getDetail().add(details);
+//								pl.getReportOutput().getScrutinyDetails().add(scrutinyDetail);
+//
+//							} else {
+//								details.put(REQUIRED, "Minimum 1/8th of the floor area ");
+//								details.put(PROVIDED, "Ventilation area " + totalVentilationArea + " of Carpet Area   "
+//										+ totalCarpetArea + " at floor " + f.getNumber());
+//								details.put(STATUS, Result.Not_Accepted.getResultVal());
+//								scrutinyDetail.getDetail().add(details);
+//								pl.getReportOutput().getScrutinyDetails().add(scrutinyDetail);
+//							}
+//						} /*
+//							 * else { details.put(REQUIRED,
+//							 * "Minimum 1/8th of the floor area ");
+//							 * details.put(PROVIDED,
+//							 * "Ventilation area not defined in floor  " +
+//							 * f.getNumber()); details.put(STATUS,
+//							 * Result.Not_Accepted.getResultVal());
+//							 * scrutinyDetail.getDetail().add(details);
+//							 * pl.getReportOutput().getScrutinyDetails().add(
+//							 * scrutinyDetail); }
+//							 */
+//					} /*
+//						 * else { details.put(REQUIRED,
+//						 * "Minimum 1/8th of the floor area ");
+//						 * details.put(PROVIDED,
+//						 * "Ventilation area not defined in floor  " +
+//						 * f.getNumber()); details.put(STATUS,
+//						 * Result.Not_Accepted.getResultVal());
+//						 * scrutinyDetail.getDetail().add(details);
+//						 * pl.getReportOutput().getScrutinyDetails().add(
+//						 * scrutinyDetail); }
+//						 */
+//
+//				}
+//			}
+//
+//		}
+//
+//		return pl;
+//	}
+
 
 	@Override
 	public Plan process(Plan pl) {
@@ -86,62 +167,51 @@ public class Ventilation extends FeatureProcess {
 			scrutinyDetail.addColumnHeading(4, PROVIDED);
 			scrutinyDetail.addColumnHeading(5, STATUS);
 
-			if (b.getBuilding() != null && b.getBuilding().getFloors() != null
+			OccupancyTypeHelper mostRestrictiveFarHelper = pl.getVirtualBuilding() != null
+					? pl.getVirtualBuilding().getMostRestrictiveFarHelper()
+					: null;
+			
+			if (!isOccupancyTypeNotApplicable(mostRestrictiveFarHelper) && b.getBuilding() != null && b.getBuilding().getFloors() != null
 					&& !b.getBuilding().getFloors().isEmpty()) {
 
 				for (Floor f : b.getBuilding().getFloors()) {
 					Map<String, String> details = new HashMap<>();
-					details.put(RULE_NO, RULE_43);
-					details.put(DESCRIPTION, LIGHT_VENTILATION_DESCRIPTION);
+					details.put(RULE_NO, CDGAdditionalService.getByLaws(pl, CDGAConstant.LIGHT_AND_VENTILATION));
+					details.put(DESCRIPTION, LIGHT_VENTILATION_DESCRIPTION+" blook "+ b.getNumber()+" floor "+f.getNumber());
 
 					if (f.getLightAndVentilation() != null && f.getLightAndVentilation().getMeasurements() != null
 							&& !f.getLightAndVentilation().getMeasurements().isEmpty()) {
 
 						BigDecimal totalVentilationArea = f.getLightAndVentilation().getMeasurements().stream()
 								.map(Measurement::getArea).reduce(BigDecimal.ZERO, BigDecimal::add);
-						BigDecimal totalCarpetArea = f.getOccupancies().stream().map(Occupancy::getCarpetArea)
-								.reduce(BigDecimal.ZERO, BigDecimal::add);
+//						BigDecimal totalCarpetArea = f.getOccupancies().stream().map(Occupancy::getCarpetArea)
+//								.reduce(BigDecimal.ZERO, BigDecimal::add);
+						
+						BigDecimal totalRoomArea = f.getTotalHabitableRoomArea();
+
+						
 
 						if (totalVentilationArea.compareTo(BigDecimal.ZERO) > 0) {
-							if (totalVentilationArea.compareTo(totalCarpetArea.divide(BigDecimal.valueOf(8)).setScale(2,
+							if (totalVentilationArea.compareTo(totalRoomArea.divide(BigDecimal.valueOf(8)).setScale(2,
 									BigDecimal.ROUND_HALF_UP)) >= 0) {
-								details.put(REQUIRED, "Minimum 1/8th of the floor area ");
-								details.put(PROVIDED, "Ventilation area " + totalVentilationArea + " of Carpet Area   "
-										+ totalCarpetArea + " at floor " + f.getNumber());
+								details.put(REQUIRED, "Minimum 1/8th of the habitable area " + totalRoomArea);
+								details.put(PROVIDED, "Ventilation area " + totalVentilationArea );
 								details.put(STATUS, Result.Accepted.getResultVal());
 								scrutinyDetail.getDetail().add(details);
 								pl.getReportOutput().getScrutinyDetails().add(scrutinyDetail);
 
 							} else {
-								details.put(REQUIRED, "Minimum 1/8th of the floor area ");
-								details.put(PROVIDED, "Ventilation area " + totalVentilationArea + " of Carpet Area   "
-										+ totalCarpetArea + " at floor " + f.getNumber());
+								details.put(REQUIRED, "Minimum 1/8th of the habitable area " + totalRoomArea);
+								details.put(PROVIDED, "Ventilation area " + totalVentilationArea);
 								details.put(STATUS, Result.Not_Accepted.getResultVal());
 								scrutinyDetail.getDetail().add(details);
 								pl.getReportOutput().getScrutinyDetails().add(scrutinyDetail);
 							}
-						} /*
-							 * else { details.put(REQUIRED,
-							 * "Minimum 1/8th of the floor area ");
-							 * details.put(PROVIDED,
-							 * "Ventilation area not defined in floor  " +
-							 * f.getNumber()); details.put(STATUS,
-							 * Result.Not_Accepted.getResultVal());
-							 * scrutinyDetail.getDetail().add(details);
-							 * pl.getReportOutput().getScrutinyDetails().add(
-							 * scrutinyDetail); }
-							 */
-					} /*
-						 * else { details.put(REQUIRED,
-						 * "Minimum 1/8th of the floor area ");
-						 * details.put(PROVIDED,
-						 * "Ventilation area not defined in floor  " +
-						 * f.getNumber()); details.put(STATUS,
-						 * Result.Not_Accepted.getResultVal());
-						 * scrutinyDetail.getDetail().add(details);
-						 * pl.getReportOutput().getScrutinyDetails().add(
-						 * scrutinyDetail); }
-						 */
+//					else {
+//						Map<String, String> map=new HashMap<String, String>();
+//						map.put("Ventilation", "Light & Ventilation not defined in block "+b.getNumber()+" Floor "+f.getNumber());
+//						pl.setErrors(map);
+//					}
 
 				}
 			}
@@ -151,6 +221,19 @@ public class Ventilation extends FeatureProcess {
 		return pl;
 	}
 
+	private boolean isOccupancyTypeNotApplicable(OccupancyTypeHelper occupancyTypeHelper) {
+		boolean flage=false;
+		
+		if (DxfFileConstants.F_TCIM.equals(occupancyTypeHelper.getSubtype().getCode())
+				|| DxfFileConstants.R1.equals(occupancyTypeHelper.getSubtype().getCode())
+				|| DxfFileConstants.T1.equals(occupancyTypeHelper.getSubtype().getCode()))
+			flage = true;
+
+		
+		return flage;
+	}
+	
+	
 	@Override
 	public Map<String, Date> getAmendments() {
 		return new LinkedHashMap<>();

@@ -65,8 +65,10 @@ $(document)
                             .alert('Document name should not exceed 50 characters!');
                         fileInput.replaceWith(fileInput.val('').clone(true));
                         return false;
-                    } else if (fileSize > 31457280) {
-                        bootbox.alert('File size should not exceed 30 MB!');
+                  //  } else if (fileSize > 31457280) {
+                    } else if (fileSize > 1073741274) {
+                       // bootbox.alert('File size should not exceed 30 MB!');
+                        bootbox.alert('File size should not exceed 1 GB!');
                         return false;
                     } else if ($.inArray(ext.toLowerCase(), fileformat) == -1) {
                         bootbox.alert("Please upload " + fileformat

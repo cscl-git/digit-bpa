@@ -77,7 +77,7 @@
            
                 <tr>
                     <td class="text-center view-content"><c:out value="1"/></td>
-                    <td id="description" class="view-content"><spring:message code="lbl.admission.fees"/></td>
+                    <td id="description" class="view-content"><spring:message text="Security fees"/></td>
                     <td class="text-right view-content"><c:set var="totalAmount"
                                                                value="${bpaApplication.admissionfeeAmount}"/>
                         <fmt:formatNumber type="number" maxFractionDigits="2" value="${bpaApplication.admissionfeeAmount}"/>

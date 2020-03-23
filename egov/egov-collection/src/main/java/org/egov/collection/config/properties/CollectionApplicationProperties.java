@@ -158,6 +158,26 @@ public class CollectionApplicationProperties {
 	public String atomMdd() {
 		return environment.getProperty("atom.mdd", String.class);
 	}
+	
+	public String atomReqHashKey() {
+		return environment.getProperty("atom.reqHashKey",String.class);
+	}
+	
+	public String atomAESRequestKey() {
+		return environment.getProperty("atom.AESRequestKey",String.class);
+	}
+	
+	public String atomAESResponseKey() {
+		return environment.getProperty("atom.AESResponseKey",String.class);
+	}
+	
+	public String atomRequestIV_Salt() {
+		return environment.getProperty("atom.requestIV_Salt",String.class);
+	}
+	
+	public String atomResponseIV_Salt() {
+		return environment.getProperty("atom.responseIV_Salt",String.class);
+	}
 
 	public String atomTxncurr() {
 		return environment.getProperty("atom.txncurr", String.class);
@@ -177,6 +197,10 @@ public class CollectionApplicationProperties {
 
 	public String atomReconcileUrl() {
 		return environment.getProperty("atom.reconcile.url");
+	}
+	
+	public Integer atomCronExpressionDelayTime() {
+		return environment.getProperty("atom.cron.expression.delay.time", Integer.class);
 	}
 
 	public String pnbMid() {

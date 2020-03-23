@@ -52,7 +52,7 @@
 	value="${bpaApplication.amenityName}" />
 
 <div class="row add-border">
-	<div class="col-sm-3 add-margin extentOfLand">
+	<%-- <div class="col-sm-3 add-margin extentOfLand">
 		<spring:message code="lbl.extent.of.land" />
 	</div>
 	<div class="col-sm-3 add-margin areaOfBase">
@@ -62,7 +62,7 @@
 		<fmt:formatNumber type="number" maxFractionDigits="2"
 				value="${bpaApplication.siteDetail[0].extentOfLand}" />
 		<c:out value="${bpaApplication.siteDetail[0].unitOfMeasurement}"></c:out>
-	</div>
+	</div> --%>
 	<div class="col-sm-3 add-margin">
 		<spring:message code="lbl.extentin.sqmts" />
 	</div>

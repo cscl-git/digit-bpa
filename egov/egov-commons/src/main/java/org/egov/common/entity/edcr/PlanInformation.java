@@ -166,7 +166,25 @@ public class PlanInformation implements Serializable {
     private String district;
     //YES/NO/NA.Extracted from Plan info. Rain water declared in plan.
     private transient String rwhDeclared = NA;
-
+    
+    //YES/NO/NA.Extracted from Plan info. Permitted with Public health 7  department NOC
+    private transient String nocPH7Dept = NA;
+    //YES/NO/NA.Extracted from Plan info. Permitted with Tehsildar department NOC
+    private transient String nocTehsildarDept = NA;
+    //YES/NO/NA.Extracted from Plan info. Permitted with Public health department NOC
+    private transient String nocPHDept = NA;
+    //YES/NO/NA.Extracted from Plan info. Permitted with Sub-Office Manimajara department NOC
+    private transient String nocManimajaraDept = NA;
+    //YES/NO/NA.Extracted from Plan info. Permitted with Road 2 department NOC
+    private transient String nocRoad2Dept = NA;
+    //YES/NO/NA.Extracted from Plan info. Permitted with Urban Planning Department (PAC) department NOC
+    private transient String nocPACDept = NA;
+    //YES/NO/NA.Extracted from Plan info. Permitted with Structure department NOC
+    private transient String nocStructureDept = NA;
+    //YES/NO/NA.Extracted from Plan info. Permitted with Electrical department NOC
+    private transient String nocElectricalDept = NA;
+    //YES/NO/NA.Extracted from Plan info. Permitted with Pollution control department NOC
+    private transient String nocPollutionDept = NA;
 
     public Boolean getGovernmentOrAidedSchool() {
         return governmentOrAidedSchool;
@@ -623,5 +641,77 @@ public class PlanInformation implements Serializable {
     public void setRwhDeclared(String rwhDeclared) {
         this.rwhDeclared = rwhDeclared;
     }
+
+	public String getNocPH7Dept() {
+		return nocPH7Dept;
+	}
+
+	public void setNocPH7Dept(String nocPH7Dept) {
+		this.nocPH7Dept = nocPH7Dept;
+	}
+
+	public String getNocTehsildarDept() {
+		return nocTehsildarDept;
+	}
+
+	public void setNocTehsildarDept(String nocTehsildarDept) {
+		this.nocTehsildarDept = nocTehsildarDept;
+	}
+
+	public String getNocPHDept() {
+		return nocPHDept;
+	}
+
+	public void setNocPHDept(String nocPHDept) {
+		this.nocPHDept = nocPHDept;
+	}
+
+	public String getNocManimajaraDept() {
+		return nocManimajaraDept;
+	}
+
+	public void setNocManimajaraDept(String nocManimajaraDept) {
+		this.nocManimajaraDept = nocManimajaraDept;
+	}
+
+	public String getNocRoad2Dept() {
+		return nocRoad2Dept;
+	}
+
+	public void setNocRoad2Dept(String nocRoad2Dept) {
+		this.nocRoad2Dept = nocRoad2Dept;
+	}
+
+	public String getNocPACDept() {
+		return nocPACDept;
+	}
+
+	public void setNocPACDept(String nocPACDept) {
+		this.nocPACDept = nocPACDept;
+	}
+
+	public String getNocStructureDept() {
+		return nocStructureDept;
+	}
+
+	public void setNocStructureDept(String nocStructureDept) {
+		this.nocStructureDept = nocStructureDept;
+	}
+
+	public String getNocElectricalDept() {
+		return nocElectricalDept;
+	}
+
+	public void setNocElectricalDept(String nocElectricalDept) {
+		this.nocElectricalDept = nocElectricalDept;
+	}
+
+	public String getNocPollutionDept() {
+		return nocPollutionDept;
+	}
+
+	public void setNocPollutionDept(String nocPollutionDept) {
+		this.nocPollutionDept = nocPollutionDept;
+	}
 
 }

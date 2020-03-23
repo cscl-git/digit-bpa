@@ -57,6 +57,89 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class BpaConstants {
+	
+	public static final String PLOT_NO = "PLOT_NUMBER";
+	public static final String AREA_ZONE = "ZONE";
+	public static final String ROOT_BOUNDARY_TYPE = "ROOT_BOUNDARY_TYPE";
+	public static final String SECTOR_NUMBER = "SECTOR_NUMBER";
+	public static final String PLOT_TYPE = "PLOT_TYPE";
+	public static final String KHATA_NO = "KHATA_NO";
+
+	// ROOT_BOUNDARY_TYPE values
+	public static final String URBAN = "URBAN";
+	public static final String RURAL = "RURAL";
+	
+	// PLOT_TYPE values
+	public static final String MARLA = "MARLA"; // Till 379.35sqm
+	public static final String ONE_KANAL = "ONE_KANAL"; // 379.35sqm to less than 505.85 sqm
+	public static final String TWO_KANAL = "TWO_KANAL"; // 505.85sqm to less than 1011.7sqm
+	public static final String ABOVE_TWO_KANAL = "ABOVE_TWO_KANAL"; // Above 1011.7sqm
+	
+	// CGCL start
+	// occupancies code
+	public static final String A = "A"; // Residential
+	public static final String F = "F"; // Mercantile / Commercial
+	public static final String G = "G"; // Industrial
+	public static final String P = "P"; // Public / Semi- Public Buildings
+	public static final String B = "B"; // Educational
+	public static final String IT = "IT";// IT Park
+	public static final String R = "R";// Railway Station, Chandigarh
+	public static final String ITH = "ITH";// IT Habitat
+	public static final String IP = "IP";// Integrated projects
+	public static final String T = "T";// Transit Oriented Development (TOD)
+
+	// sub occupancies code
+	public static final String A_P = "A-P";// Plotted
+	public static final String A_G = "A-G";// Grouped
+
+	public static final String B_EC = "B_EC";// Education city (Sarangpur)
+	public static final String B_HEI = "B-HEI";// Higher Educational Institute //Educational/ Academic
+	public static final String B_H = "B-H";// Hostels
+
+	public static final String F_SCO = "F-SCO";// SCO’S/ SCF’S / BAYSHOP’S/ SEMI INDUSTRIAL
+	public static final String F_B ="F-B"; // BOOTHS ETC.
+	public static final String F_H = "F-H";// Hotels
+	public static final String F_M = "F-M";// MULTIPLEX/MALLS (specifically earmarked sites)
+	public static final String F_CFI = "F-CFI";// COMMERCIAL (converted from Industrial)
+	public static final String F_BH = "F-BH";// Banquet hall/ marriage palaces
+	public static final String F_BBM = "F-BBM";// Bulk building material
+	public static final String F_TS = "F-TS";// Timber site (single storey)
+	public static final String F_TCIM = "F-TCIM";// Comercial_Theatre converted into multiplex
+	public static final String F_PP = "F-PP"; // Petrol Pump
+	public static final String F_CD = "F-CD"; // Coal Depot
+
+	public static final String G_GBAC = "G-BACG-";// Governed by Architectural Controls
+	public static final String G_GBZP = "G-GBZP";// Governed by Zoning Plans
+
+	public static final String P_D = "P-D"; // Dispensary
+	public static final String P_P = "P-P";// Police Station
+	public static final String P_F = "P-F"; // Fire Station
+	public static final String P_N = "P-N"; // Nursing Home
+	public static final String P_H = "P-H";// Hospital
+	public static final String P_CC = "P-CC";// Community centre/Janj Ghar
+	public static final String P_SS = "P-SS";// Sports Stadium
+	public static final String P_CNA = "P-CNA";// Cultural and Non Academic institutional sites
+	public static final String P_R = "P-R";// Religious
+
+	public static final String IT_MCL = "IT-MCL";// Main Campus (above 6 acre)
+	public static final String IT_MCM = "IT-MCM";// Small Campus (2 to 6 acre)
+	public static final String IT_MCS = "IT-MCS";// built to suite site (2 acre or below)
+
+	public static final String R1="R1"; // Railway Station, Chandigarh
+
+	public static final String ITH_H = "ITH_H";// Hospital
+	public static final String ITH_C = "ITH-C";// COMMERCIAL / HOTEL
+	public static final String ITH_CC = "ITH-CC";// Club
+	public static final String ITH_R = "ITH-R";// RESIDENTIAL
+	public static final String ITH_GH = "ITH-GH";// Government housing
+
+	public static final String IP_I = "IP-I";// Institutional (70%)
+	public static final String IP_R = "IP-R";// Residential (25%)
+	public static final String IP_C = "IP-C";// Commercial (5%)
+
+	public static final String T1 = "T1";// Transit Oriented Development (TOD)
+	// CGCL end
+	
     // service type constants
     public static final String ST_CODE_01 = "01";
     public static final String ST_CODE_02 = "02";
@@ -147,7 +230,7 @@ public class BpaConstants {
     public static final String WF_DOC_SCRTNY_RE_SCHDLE_PENDING = "Document Scrutiny ReScheduling Pending";
     public static final String FWD_TO_AE_AFTER_TS_INSP = "Forwarded to Assistant Engineer";
     public static final String FWD_TO_OVERSEER_AFTER_TS_INSPN = "Forwarded to Overseer";
-    public static final String REJECT_BY_CLERK = "Rejection initiated by clerk";
+    public static final String REJECTION_INITIATED = "Rejection Initiated";
     public static final String WF_AUTO_RESCHEDULE_PENDING = "Pending For Auto Rescheduling Document Scrutiny";
     public static final String FWD_TO_AE_FOR_APPROVAL = "Forwarded to Assistant Engineer For Approval";
     public static final String FWD_TO_CLERK_PENDING = "Forward to section clerk is pending";
@@ -160,14 +243,25 @@ public class BpaConstants {
     public static final String WF_ASST_ENG_APPROVED = "Assistant Engineer approved";
     public static final String WF_OWNERSHIP_FEE_PENDING = "Ownership transfer fee payment pending";
     public static final String OWNERSHIP_FEE_COLLECTED = "Ownership transfer fee payment done";
-
+    
+    public static final String WF_BA_VARIFICATION_INITIATED = "Forwarded to property documents verification";
+    public static final String WF_BA_CHECK_NOC_UPDATION="Forwarded to check NOC updation";
+    public static final String WF_BA_AE_APPROVAL="Forwarded to E- Assistant Estate Officer for Approval";
+    public static final String WF_BA_INITIATE_GENERATE_PERMIT_ORDER="Initiated process for generate permit Order";
+    public static final String WF_BA_SDO_APPROVAL="Forwarded to SDO Building for Approval";
+    
+    public static final String WF_BA_NOC_UPDATION_IN_PROGRESS="NOC updation in progress";
+    public static final String WF_BA_FINAL_APPROVAL_PROCESS_INITIATED="Final Approval Process initiated";
+    public static final String WF_BA_AEE_APPLICATION_APPROVAL_PENDING="AEE Application Approval Pending";
+    public static final String WF_BA_FORWARD_TO_SDO_BUILDING="Forward to SDO Building";
 
     // application status constants
     public static final String APPROVED = "Approved";
     public static final String APPLICATION_STATUS_APPROVED = APPROVED;
     public static final String PAYMENT_PENDING = "PAYMENT_PENDING";
     public static final String APPLICATION_STATUS_PENDNING = PAYMENT_PENDING;
-    public static final String APPLICATION_STATUS_FIELD_INS = "Field Inspected";
+    public static final String APPLICATION_STATUS_DOC_VERIFY_COMPLETED = "Document Verification Completed";
+    public static final String APPLICATION_STATUS_APPROVAL_PROCESS_INITIATED = "Approval Process Initiated";
     public static final String APPLICATION_STATUS_ORDER_ISSUED = "Order Issued to Applicant";
     public static final String APPLICATION_STATUS_DIGI_SIGNED = "Digitally signed";
     public static final String APPLICATION_STATUS_RECORD_APPROVED = "Record Approved";
@@ -186,6 +280,7 @@ public class BpaConstants {
     public static final String APPLICATION_APPROVAL_PENDING = "Secretary Application Approval Pending";
     public static final String RENEWAL_MODULE_TYPE = "RENEWAL";
     public static final String WF_INIT_OWNERSHIP = "Initiated for ownership transfer";
+    public static final String APPLICATION_ACTION_VERIFY_RR = "Verify Rejection Reasons";
     
     // Checklist document type constants
     public static final String STAKE_HOLDER_CHECK_LIST_TYPE = "STAKEHOLDERDOCUMENT";
@@ -252,12 +347,6 @@ public class BpaConstants {
     public static final String BPASTATUS_REGISTRATIONFEE_APPROVED = APPROVED;
     public static final String BPA_ADM_FEE = "Application Fee";
     public static final String BPA_APP_FEE = "Application Fees";
-    public static final String BPA_ADDITIONAL_FEE = "Additional Fees";
-    public static final String BPA_OTHER_FEE = "Other Fees";
-    public static final String BPA_PERMIT_FEE = "Permit Fees";
-    public static final String BPA_DEMOLITION_FEE = "Demolition Fees";
-    public static final String BPA_LAND_DEVELOPMENT_CHARGES = "Land Development Charges";
-    public static final String BPA_WELL_FEE = "Charges for Well";
     public static final String BPA_COMPOUND_FEE = "Charges for Compound Wall";
     public static final String STATE_LOGO_PATH = "/egi/resources/global/images/logo@2x.png";
     public static final String IMAGES_BASE_PATH = "/egi/resources/global/images/";
@@ -274,18 +363,30 @@ public class BpaConstants {
     public static final String PERMIT_APPLN_FEE_COLLECTION_REQUIRED = "PERMITAPPLNFEECOLLECTIONREQUIRED";
     public static final String BPA_REGISTRATION_FEE = "Registration Fees";
     public static final String OC_FEE = "Occupancy Certificate Fees";
-    public static final String SHELTERFUND = "Shelter Fund";
+    
+    public static final String SECURITY_FEE = "Security fee";
     public static final String LABOURCESS = "Labour cess";
+    public static final String SCRUTINY_FEE = "Scrutiny fee";
+    public static final String GST_18 = "GST 18%";
+    public static final String ADDITIONAL_COVERAGE_FEE = "Additional Coverage fee";
+    public static final String RULE_5_FEE = "Rule 5 fee";
+    
     public static final String TP_DEPT = "TOWN PLANNING DEPARTMENT";
     public static final String DEV_PERMIT_FEE = "DPF";
     public static final String OWNERSHIP_FEE = "Ownership Transfer Fees";
     
     //NOC integration related
     public static final String FIRENOCTYPE = "FIRE NOC"; 
-    public static final String AIRPORTNOCTYPE = "AAI NOC"; 
-    public static final String NMANOCTYPE = "NMA NOC"; 
-    public static final String ENVNOCTYPE = "MOEF NOC"; 
-    public static final String IRRNOCTYPE = "IDA NOC"; 
+    public static final String PH7NOCTYPE = "PUB HEALTH 7 NOC"; 
+    public static final String TEHNOCTYPE = "TEHSILDAR NOC"; 
+    public static final String PHNOCTYPE = "PUB HEALTH NOC"; 
+    public static final String MANINOCTYPE = "MANIMAJARA NOC";    
+    public static final String ROAD2NOCTYPE = "ROAD 2 NOC";
+    public static final String PACNOCTYPE = "PAC NOC";
+    public static final String STRCNOCTYPE = "STRUCTURE NOC";
+    public static final String ELECNOCTYPE = "ELECTRICAL NOC";
+    public static final String POLNOCTYPE = "POL CONTROL NOC";    
+    
     public static final String NOC_INITIATED = "Initiated";
     public static final String NOC_APPROVED = "Approved";
     public static final String NOC_REJECTED = "Rejected";
@@ -293,16 +394,25 @@ public class BpaConstants {
     public static final String NOC_APPL_REJECTED= "Permit Application Rejected";
     public static final String PERMIT = "Permit";
     public static final String OC = "OC";
+    
     public static final String FIREOCNOCTYPE = "FIRE OCNOC";
     public static final String AIRPORTOCNOCTYPE = "AAI OCNOC";
     public static final String NMAOCNOCTYPE = "NMA OCNOC";
     public static final String ENVOCNOCTYPE = "MOEF OCNOC";
     public static final String IRROCNOCTYPE = "IDA OCNOC";
+    
     //NOC approver roles
     public static final String FIRENOCROLE = "BPA_FIRE_NOC_ROLE";
-    public static final String ENVNOCROLE = "BPA_ENVIRONMENT_NOC_ROLE";
-    public static final String NMANOCROLE = "BPA_NMA_NOC_ROLE";
-    public static final String AIRPORTNOCROLE = "BPA_AIPORT_AUTH_NOC_ROLE";
+    public static final String PHNOCROLE = "BPA_PUB_HEALTH_NOC_ROLE";
+    public static final String TEHNOCROLE = "BPA_TEHSILDAR_NOC_ROLE";
+    public static final String PH7NOCROLE = "BPA_PUB_HEALTH_7_NOC_ROLE";
+    public static final String ROAD2NOCROLE = "BPA_ROAD_2_NOC_ROLE";
+    public static final String PACNOCROLE = "BPA_PAC_NOC_ROLE";
+    public static final String STRCNOCROLE = "BPA_STRUCTURE_NOC_ROLE";
+    public static final String ELECNOCROLE = "BPA_ELECTRICAL_NOC_ROLE";
+    public static final String POLNOCROLE = "BPA_POL_CONTROL_NOC_ROLE";
+    public static final String MANINOCROLE = "BPA_MANIMAJARA_NOC_ROLE";
+
 
     // designation constants
     public static final String DESIGNATION_AEE = "Assistant executive engineer";
@@ -383,6 +493,7 @@ public class BpaConstants {
     public static final String GENERATE_OCCUPANCY_CERTIFICATE = "Generate Occupancy Certificate";
     public static final String WF_GENERATE_RENEWAL_ORDER = "Generate Permit Renewal Order";
     public static final String WF_GENERATE_OWNERSHIP_ORDER = "Generate Ownership Transfer Order";
+    public static final String WF_FORWARD_BUTTON = "Forward";
     // building details related constants
     public static final String TOTAL_PLINT_AREA = "totalPlintArea";
     public static final String BUILDINGHEIGHT_GROUND = "buildingheightGround";
@@ -626,17 +737,23 @@ public class BpaConstants {
     private static final Map<String, String> NOCTYPE = new ConcurrentHashMap<>();
     static {
     	NOCTYPE.put(FIRENOCTYPE, FIRENOCROLE);
-    	NOCTYPE.put(AIRPORTNOCTYPE, AIRPORTNOCROLE);
-    	NOCTYPE.put(NMANOCTYPE, NMANOCROLE);
-    	NOCTYPE.put(ENVNOCTYPE, ENVNOCROLE);
+    	NOCTYPE.put(PH7NOCTYPE, PH7NOCROLE);    	
+    	NOCTYPE.put(TEHNOCTYPE, TEHNOCROLE);
+    	NOCTYPE.put(PHNOCTYPE, PHNOCROLE); 
+    	NOCTYPE.put(MANINOCTYPE, MANINOCROLE); 
+    	NOCTYPE.put(ROAD2NOCTYPE, ROAD2NOCROLE);
+    	NOCTYPE.put(PACNOCTYPE, PACNOCROLE);
+    	NOCTYPE.put(STRCNOCTYPE, STRCNOCROLE); 
+    	NOCTYPE.put(ELECNOCTYPE, ELECNOCROLE); 
+    	NOCTYPE.put(POLNOCTYPE, POLNOCROLE);
     }
     
     private static final Map<String, String> OCNOCTYPE = new ConcurrentHashMap<>();
     static {
     	NOCTYPE.put(FIREOCNOCTYPE, FIRENOCROLE);
-    	NOCTYPE.put(AIRPORTOCNOCTYPE, AIRPORTNOCROLE);
-    	NOCTYPE.put(NMAOCNOCTYPE, NMANOCROLE);
-    	NOCTYPE.put(ENVOCNOCTYPE, ENVNOCROLE);
+    	//NOCTYPE.put(AIRPORTOCNOCTYPE, AIRPORTNOCROLE);
+    	//NOCTYPE.put(NMAOCNOCTYPE, NMANOCROLE);
+    	//NOCTYPE.put(ENVOCNOCTYPE, ENVNOCROLE);
     }
 
     // Update and use this code if DCR integration require to particular service type and occupancy

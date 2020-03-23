@@ -58,7 +58,7 @@ public interface ApplicationBpaFeeCalculation {
 
 	PermitFee calculateBpaSanctionFees(final BpaApplication application) ;
 
-	BigDecimal calculateAdmissionFeeAmount(List<Long> serviceTypeIds, Long applicationTypeId);
+	BigDecimal calculateAdmissionFeeAmount(Long applicationTypeId, String edcrNo);
 
 	BigDecimal setAdmissionFeeAmount(BpaApplication application, List<ServiceType> amenityList);
 

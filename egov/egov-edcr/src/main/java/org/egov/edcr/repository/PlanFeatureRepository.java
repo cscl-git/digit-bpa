@@ -175,8 +175,8 @@ public class PlanFeatureRepository {
         pf = new PlanFeature(SpiralStair.class);
         features.add(pf);
 
-        pf = new PlanFeature(FireStair.class);
-        features.add(pf);
+   //     pf = new PlanFeature(FireStair.class);
+   //     features.add(pf);
 
         pf = new PlanFeature(Balcony.class);
         features.add(pf);
@@ -280,14 +280,14 @@ public class PlanFeatureRepository {
         pf = new PlanFeature(RecreationalSpace.class);
         features.add(pf);
 
-        pf = new PlanFeature(TravelDistanceToExit.class);
-        features.add(pf);
+       // pf = new PlanFeature(TravelDistanceToExit.class);
+       // features.add(pf);
 
         pf = new PlanFeature(AdditionalFeature.class);
         features.add(pf);
 
-        pf = new PlanFeature(FireTenderMovement.class);
-        features.add(pf);
+     //   pf = new PlanFeature(FireTenderMovement.class);
+      //  features.add(pf);
 
         pf = new PlanFeature(SurrenderRoad.class);
         features.add(pf);

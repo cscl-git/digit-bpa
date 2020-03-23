@@ -19,6 +19,8 @@ import org.egov.common.entity.edcr.Result;
 import org.egov.common.entity.edcr.ScrutinyDetail;
 import org.egov.common.entity.edcr.StairLanding;
 import org.egov.edcr.constants.DxfFileConstants;
+import org.egov.edcr.service.cdg.CDGAConstant;
+import org.egov.edcr.service.cdg.CDGAdditionalService;
 import org.egov.edcr.utility.DcrConstants;
 import org.egov.edcr.utility.Util;
 import org.springframework.context.i18n.LocaleContextHolder;
@@ -104,71 +106,88 @@ public class GeneralStair extends FeatureProcess {
                 List<Floor> floors = block.getBuilding().getFloors();
                 List<String> stairAbsent = new ArrayList<>();
                 // BigDecimal floorSize = block.getBuilding().getFloorsAboveGround();
-                for (Floor floor : floors) {
-                    if (!floor.getTerrace()) {
+                
+                if(!isOccupancyTypehNotApplicable(mostRestrictiveOccupancyType)) {
+                    for (Floor floor : floors) {
+                        if (!floor.getTerrace()) {
 
-                        boolean isTypicalRepititiveFloor = false;
-                        Map<String, Object> typicalFloorValues = Util.getTypicalFloorValues(block, floor,
-                                isTypicalRepititiveFloor);
+                            boolean isTypicalRepititiveFloor = false;
+                            Map<String, Object> typicalFloorValues = Util.getTypicalFloorValues(block, floor,
+                                    isTypicalRepititiveFloor);
 
-                        List<org.egov.common.entity.edcr.GeneralStair> generalStairs = floor.getGeneralStairs();
+                            List<org.egov.common.entity.edcr.GeneralStair> generalStairs = floor.getGeneralStairs();
 
-                        int size = generalStairs.size();
-                        generalStairCount = generalStairCount + size;
+                            int size = generalStairs.size();
+                            generalStairCount = generalStairCount + size;
 
-                        if (!generalStairs.isEmpty()) {
-                            for (org.egov.common.entity.edcr.GeneralStair generalStair : generalStairs) {
-                                {
-                                    validateFlight(plan, errors, block, scrutinyDetail2, scrutinyDetail3,
-                                            scrutinyDetailRise, mostRestrictiveOccupancyType, floor, typicalFloorValues,
-                                            generalStair);
+                            if (!generalStairs.isEmpty()) {
+                                for (org.egov.common.entity.edcr.GeneralStair generalStair : generalStairs) {
+                                    {
+                                        validateFlight(plan, errors, block, scrutinyDetail2, scrutinyDetail3,
+                                                scrutinyDetailRise, mostRestrictiveOccupancyType, floor, typicalFloorValues,
+                                                generalStair);
 
-                                    List<StairLanding> landings = generalStair.getLandings();
-                                    if (!landings.isEmpty()) {
-                                        validateLanding(plan, block, scrutinyDetailLanding, mostRestrictiveOccupancyType,
-                                                floor,
-                                                typicalFloorValues, generalStair, landings, errors);
-                                    } else {
-                                        errors.put(
-                                                "General Stair landing not defined in block " + block.getNumber() + " floor "
-                                                        + floor.getNumber()
-                                                        + " stair " + generalStair.getNumber(),
-                                                "General Stair landing not defined in block " + block.getNumber() + " floor "
-                                                        + floor.getNumber()
-                                                        + " stair " + generalStair.getNumber());
-                                        plan.addErrors(errors);
+                                        List<StairLanding> landings = generalStair.getLandings();
+                                        if (!landings.isEmpty()) {
+                                            validateLanding(plan, block, scrutinyDetailLanding, mostRestrictiveOccupancyType,
+                                                    floor,
+                                                    typicalFloorValues, generalStair, landings, errors);
+                                        } else {
+                                            errors.put(
+                                                    "General Stair landing not defined in block " + block.getNumber() + " floor "
+                                                            + floor.getNumber()
+                                                            + " stair " + generalStair.getNumber(),
+                                                    "General Stair landing not defined in block " + block.getNumber() + " floor "
+                                                            + floor.getNumber()
+                                                            + " stair " + generalStair.getNumber());
+                                            plan.addErrors(errors);
+                                        }
+
                                     }
-
                                 }
+                            } else {
+                                stairAbsent.add("Block " + block.getNumber() + " floor " + floor.getNumber());
                             }
-                        } else {
-                            stairAbsent.add("Block " + block.getNumber() + " floor " + floor.getNumber());
+
                         }
-
                     }
-                }
 
-                if (block.getBuilding().getFloors().size() > 1
-                        && !stairAbsent.isEmpty()) {
-                    for (String error : stairAbsent) {
-                        errors.put("General Stair " + error,
-                                "General stair not defined in " + error);
+                    if (block.getBuilding().getFloors().size() > 1
+                            && !stairAbsent.isEmpty()) {
+                        for (String error : stairAbsent) {
+                            errors.put("General Stair " + error,
+                                    "General stair not defined in " + error);
+                            plan.addErrors(errors);
+                        }
+                    }
+
+                    if (block.getBuilding().getFloors().size() > 1
+                            && generalStairCount == 0) {
+                        errors.put("General Stair not defined in blk " + block.getNumber(),
+                                "General Stair not defined in block " + block.getNumber()
+                                        + ", it is mandatory for building with floors more than one.");
                         plan.addErrors(errors);
-                    }
+                    }//
                 }
-
-                if (block.getBuilding().getFloors().size() > 1
-                        && generalStairCount == 0) {
-                    errors.put("General Stair not defined in blk " + block.getNumber(),
-                            "General Stair not defined in block " + block.getNumber()
-                                    + ", it is mandatory for building with floors more than one.");
-                    plan.addErrors(errors);
-                }
+            
             }
         }
 
         return plan;
     }
+    
+    
+    private boolean isOccupancyTypehNotApplicable(OccupancyTypeHelper occupancyTypeHelper) {
+		boolean flage = false;
+
+		if (DxfFileConstants.F_PP.equals(occupancyTypeHelper.getSubtype().getCode())
+				|| DxfFileConstants.F_CD.equals(occupancyTypeHelper.getSubtype().getCode())
+				|| DxfFileConstants.T1.equals(occupancyTypeHelper.getSubtype().getCode()))
+			flage = true;
+
+		return flage;
+	}
+
 
     private void validateLanding(Plan plan, Block block, ScrutinyDetail scrutinyDetailLanding,
             OccupancyTypeHelper mostRestrictiveOccupancyType, Floor floor, Map<String, Object> typicalFloorValues,
@@ -192,14 +211,14 @@ public class GeneralStair extends FeatureProcess {
                         : " floor " + floor.getNumber();
 
                 if (valid) {
-                    setReportOutputDetailsFloorStairWise(plan, RULE42_5_II, value,
+                    setReportOutputDetailsFloorStairWise(plan, CDGAdditionalService.getByLaws(mostRestrictiveOccupancyType, CDGAConstant.STAIRCASE), value,
                             String.format(WIDTH_LANDING_DESCRIPTION, generalStair.getNumber(),
                                     landing.getNumber()),
                             minimumWidth.toString(),
                             String.valueOf(minWidth), Result.Accepted.getResultVal(),
                             scrutinyDetailLanding);
                 } else {
-                    setReportOutputDetailsFloorStairWise(plan, RULE42_5_II, value,
+                    setReportOutputDetailsFloorStairWise(plan, CDGAdditionalService.getByLaws(mostRestrictiveOccupancyType, CDGAConstant.STAIRCASE), value,
                             String.format(WIDTH_LANDING_DESCRIPTION, generalStair.getNumber(),
                                     landing.getNumber()),
                             minimumWidth.toString(),
@@ -210,11 +229,11 @@ public class GeneralStair extends FeatureProcess {
             }else {
                 errors.put(
                         "General Stair landing width not defined in block " + block.getNumber() + " floor "
-                                + floor.getNumber()
-                                + " stair " + generalStair.getNumber(),
+                                + floor.getNumber() 
+                                + " stair " + generalStair.getNumber()+" Landing "+landing.getNumber(),
                         "General Stair landing width not defined in block " + block.getNumber() + " floor "
                                 + floor.getNumber()
-                                + " stair " + generalStair.getNumber());
+                                + " stair " + generalStair.getNumber()+" Landing "+landing.getNumber());
                 plan.addErrors(errors);
             }
         }
@@ -237,7 +256,8 @@ public class GeneralStair extends FeatureProcess {
                         block.getNumber(), floor.getNumber(), generalStair.getNumber(),
                         flight.getNumber());
 
-                if (flightPolyLines != null && flightPolyLines.size() > 0) {
+//                if (flightPolyLines != null) {
+              if (flightPolyLines != null && flightPolyLines.size() > 0) {
                     if (flightPolyLineClosed) {
                         if (flightWidths != null && flightWidths.size() > 0) {
                             minFlightWidth = validateWidth(plan, scrutinyDetail2, floor, block,
@@ -326,11 +346,11 @@ public class GeneralStair extends FeatureProcess {
                     : " floor " + floor.getNumber();
 
             if (valid) {
-                setReportOutputDetailsFloorStairWise(plan, RULE42_5_II, value,
+                setReportOutputDetailsFloorStairWise(plan, CDGAdditionalService.getByLaws(mostRestrictiveOccupancyType, CDGAConstant.STAIRCASE), value,
                         String.format(WIDTH_DESCRIPTION, generalStair.getNumber(), flight.getNumber()), minimumWidth.toString(),
                         String.valueOf(minFlightWidth), Result.Accepted.getResultVal(), scrutinyDetail2);
             } else {
-                setReportOutputDetailsFloorStairWise(plan, RULE42_5_II, value,
+                setReportOutputDetailsFloorStairWise(plan, CDGAdditionalService.getByLaws(mostRestrictiveOccupancyType, CDGAConstant.STAIRCASE), value,
                         String.format(WIDTH_DESCRIPTION, generalStair.getNumber(), flight.getNumber()), minimumWidth.toString(),
                         String.valueOf(minFlightWidth), Result.Not_Accepted.getResultVal(), scrutinyDetail2);
             }
@@ -400,12 +420,12 @@ public class GeneralStair extends FeatureProcess {
                             ? (String) typicalFloorValues.get("typicalFloors")
                             : " floor " + floor.getNumber();
                     if (valid) {
-                        setReportOutputDetailsFloorStairWise(plan, RULE42_5_II, value,
+                        setReportOutputDetailsFloorStairWise(plan, CDGAdditionalService.getByLaws(mostRestrictiveOccupancyType, CDGAConstant.STAIRCASE), value,
                                 String.format(TREAD_DESCRIPTION, generalStair.getNumber(), flight.getNumber()),
                                 requiredTread.toString(),
                                 String.valueOf(minTread), Result.Accepted.getResultVal(), scrutinyDetail3);
                     } else {
-                        setReportOutputDetailsFloorStairWise(plan, RULE42_5_II, value,
+                        setReportOutputDetailsFloorStairWise(plan, CDGAdditionalService.getByLaws(mostRestrictiveOccupancyType, CDGAConstant.STAIRCASE), value,
                                 String.format(TREAD_DESCRIPTION, generalStair.getNumber(), flight.getNumber()),
                                 requiredTread.toString(),
                                 String.valueOf(minTread), Result.Not_Accepted.getResultVal(), scrutinyDetail3);
@@ -448,12 +468,12 @@ public class GeneralStair extends FeatureProcess {
                     ? (String) typicalFloorValues.get("typicalFloors")
                     : " floor " + floor.getNumber();
             if (valid) {
-                setReportOutputDetailsFloorStairWise(plan, RULE42_5_II, value,
+                setReportOutputDetailsFloorStairWise(plan, CDGAdditionalService.getByLaws(plan, CDGAConstant.STAIRCASE), value,
                         String.format(NO_OF_RISER_DESCRIPTION, generalStair.getNumber(), flight.getNumber()),
                         EXPECTED_NO_OF_RISER,
                         String.valueOf(noOfRises), Result.Accepted.getResultVal(), scrutinyDetail3);
             } else {
-                setReportOutputDetailsFloorStairWise(plan, RULE42_5_II, value,
+                setReportOutputDetailsFloorStairWise(plan, CDGAdditionalService.getByLaws(plan, CDGAConstant.STAIRCASE), value,
                         String.format(NO_OF_RISER_DESCRIPTION, generalStair.getNumber(), flight.getNumber()),
                         EXPECTED_NO_OF_RISER,
                         String.valueOf(noOfRises), Result.Not_Accepted.getResultVal(), scrutinyDetail3);

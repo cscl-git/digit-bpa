@@ -267,14 +267,14 @@
 							</a>&nbsp;</td>
 						</c:if>
 
-						<c:if
+						<%-- <c:if
 							test="${bpaApplication.status.code eq  'Letter To Party Created' && mode eq 'showLPDetails' }">
 							<td><a
 								href="/bpa/lettertoparty/lettertopartyreply/${lettertopartylist.get(0).id}"
 								class="btn btn-primary"> <spring:message
 										code='lbl.btn.reply.letter.to.party' />
 							</a>&nbsp;</td>
-						</c:if>
+						</c:if> --%>
 						<input type="hidden" id="onlinePaymentEnable"
 							value="${onlinePaymentEnable}">
 						<c:if
@@ -303,7 +303,7 @@
 								</form:button>&nbsp;
 							</c:if></td>
 						<c:if
-							test="${bpaApplication.status.code eq 'Order Issued to Applicant' || bpaApplication.status.code eq 'Revocation cancelled' || (bpaApplication.applicationType.name eq 'Low Risk' && !isFeeCollected)}">
+							test="${bpaApplication.status.code eq 'Order Issued to Applicant' || bpaApplication.status.code eq 'Revocation cancelled'}">
 							<td><a
 								href="/bpa/application/generatepermitorder/${bpaApplication.applicationNumber}"
 								target="popup" class="btn btn-primary"

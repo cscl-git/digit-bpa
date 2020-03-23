@@ -73,35 +73,40 @@ public class LocationPlan extends FeatureProcess {
 
 	@Override
 	public Plan process(Plan pl) {
-
-		ScrutinyDetail scrutinyDetail = new ScrutinyDetail();
-		scrutinyDetail.setKey("Common_Location Plan");
-		scrutinyDetail.addColumnHeading(1, RULE_NO);
-		scrutinyDetail.addColumnHeading(2, DESCRIPTION);
-		scrutinyDetail.addColumnHeading(3, PROVIDED);
-		scrutinyDetail.addColumnHeading(4, STATUS);
-
-		HashMap<String, String> errors = new HashMap<>();
-		Map<String, String> details = new HashMap<>();
-		details.put(RULE_NO, RULE_5_4_I_A);
-		details.put(DESCRIPTION, LOCATION_PLAN_DESCRIPTION);
-		if (pl.getDrawingPreference().getLocationPlans() == null) {
-			errors.put("LOCATION_PLAN", "LOCATION_PLAN layer is not provided");
-			pl.addErrors(errors);
-		} else if (!pl.getDrawingPreference().getLocationPlans().isEmpty()) {
-			details.put(PROVIDED, "Location plans provided");
-			details.put(STATUS, Result.Accepted.getResultVal());
-			scrutinyDetail.getDetail().add(details);
-			pl.getReportOutput().getScrutinyDetails().add(scrutinyDetail);
-		} else {
-			details.put(PROVIDED, "PolyLine is not defined in LOCATION_PLAN layer");
-			details.put(STATUS, Result.Not_Accepted.getResultVal());
-			scrutinyDetail.getDetail().add(details);
-			pl.getReportOutput().getScrutinyDetails().add(scrutinyDetail);
-		}
-
 		return pl;
 	}
+
+//	@Override
+//	public Plan process(Plan pl) {
+//
+//		ScrutinyDetail scrutinyDetail = new ScrutinyDetail();
+//		scrutinyDetail.setKey("Common_Location Plan");
+//		scrutinyDetail.addColumnHeading(1, RULE_NO);
+//		scrutinyDetail.addColumnHeading(2, DESCRIPTION);
+//		scrutinyDetail.addColumnHeading(3, PROVIDED);
+//		scrutinyDetail.addColumnHeading(4, STATUS);
+//
+//		HashMap<String, String> errors = new HashMap<>();
+//		Map<String, String> details = new HashMap<>();
+//		details.put(RULE_NO, RULE_5_4_I_A);
+//		details.put(DESCRIPTION, LOCATION_PLAN_DESCRIPTION);
+//		if (pl.getDrawingPreference().getLocationPlans() == null) {
+//			errors.put("LOCATION_PLAN", "LOCATION_PLAN layer is not provided");
+//			pl.addErrors(errors);
+//		} else if (!pl.getDrawingPreference().getLocationPlans().isEmpty()) {
+//			details.put(PROVIDED, "Location plans provided");
+//			details.put(STATUS, Result.Accepted.getResultVal());
+//			scrutinyDetail.getDetail().add(details);
+//			pl.getReportOutput().getScrutinyDetails().add(scrutinyDetail);
+//		} else {
+//			details.put(PROVIDED, "PolyLine is not defined in LOCATION_PLAN layer");
+//			details.put(STATUS, Result.Not_Accepted.getResultVal());
+//			scrutinyDetail.getDetail().add(details);
+//			pl.getReportOutput().getScrutinyDetails().add(scrutinyDetail);
+//		}
+//
+//		return pl;
+//	}
 
 	@Override
 	public Map<String, Date> getAmendments() {

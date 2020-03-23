@@ -53,115 +53,221 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import static org.egov.edcr.utility.DcrConstants.OBJECTNOTDEFINED;
+import static org.egov.edcr.utility.DcrConstants.OBJECTDEFINED;
+
+import javax.mail.Flags.Flag;
+
 import org.apache.log4j.Logger;
 import org.egov.common.entity.edcr.Block;
 import org.egov.common.entity.edcr.Floor;
+import org.egov.common.entity.edcr.OccupancyTypeHelper;
 import org.egov.common.entity.edcr.Plan;
 import org.egov.common.entity.edcr.Result;
 import org.egov.common.entity.edcr.ScrutinyDetail;
+import org.egov.edcr.constants.DxfFileConstants;
+import org.egov.edcr.service.cdg.CDGAConstant;
+import org.egov.edcr.service.cdg.CDGAdditionalService;
 import org.springframework.stereotype.Service;
 
 @Service
 public class Basement extends FeatureProcess {
 
-    private static final Logger LOG = Logger.getLogger(Basement.class);
-    private static final String RULE_46_6A = "46-6a";
-    private static final String RULE_46_6C = "46-6c";
-    public static final String BASEMENT_DESCRIPTION_ONE = "Height from the floor to the soffit of the roof slab or ceiling";
-    public static final String BASEMENT_DESCRIPTION_TWO = "Minimum height of the ceiling of upper basement above ground level";
+	private static final Logger LOG = Logger.getLogger(Basement.class);
+	private static final String RULE_46_6A = "46-6a";
+	private static final String RULE_46_6C = "46-6c";
+	public static final String BASEMENT_REQUIRED = "Basement required";
+	public static final String BASEMENT_DESCRIPTION_ONE = "Height from the floor to the soffit of the roof slab or ceiling";
+	public static final String BASEMENT_DESCRIPTION_TWO = "Minimum height of the ceiling of upper basement above ground level";
 
-    @Override
-    public Plan validate(Plan pl) {
+	@Override
+	public Plan validate(Plan pl) {
 
-        return pl;
-    }
+		return pl;
+	}
 
-    @Override
-    public Plan process(Plan pl) {
+	@Override
+	public Plan process(Plan pl) {
 
-        ScrutinyDetail scrutinyDetail = new ScrutinyDetail();
-        scrutinyDetail.setKey("Common_Basement");
-        scrutinyDetail.addColumnHeading(1, RULE_NO);
-        scrutinyDetail.addColumnHeading(2, DESCRIPTION);
-        scrutinyDetail.addColumnHeading(3, REQUIRED);
-        scrutinyDetail.addColumnHeading(4, PROVIDED);
-        scrutinyDetail.addColumnHeading(5, STATUS);
+		ScrutinyDetail scrutinyDetail = new ScrutinyDetail();
+		scrutinyDetail.setKey("Common_Basement");
+		scrutinyDetail.addColumnHeading(1, RULE_NO);
+		scrutinyDetail.addColumnHeading(2, DESCRIPTION);
+		scrutinyDetail.addColumnHeading(3, REQUIRED);
+		scrutinyDetail.addColumnHeading(4, PROVIDED);
+		scrutinyDetail.addColumnHeading(5, STATUS);
 
-        Map<String, String> details = new HashMap<>();
+		Map<String, String> details = new HashMap<>();
+		HashMap<String, String> errors = new HashMap<>();
+		BigDecimal minLength = BigDecimal.ZERO;
 
-        BigDecimal minLength = BigDecimal.ZERO;
+		for (Block b : pl.getBlocks()) {
+			if (b.getBuilding() != null && b.getBuilding().getFloors() != null
+					&& !b.getBuilding().getFloors().isEmpty()) {
 
-        if (pl.getBlocks() != null) {
-            for (Block b : pl.getBlocks()) {
-                if (b.getBuilding() != null && b.getBuilding().getFloors() != null
-                        && !b.getBuilding().getFloors().isEmpty()) {
+				OccupancyTypeHelper mostRestrictiveFarHelper = pl.getVirtualBuilding() != null
+						? pl.getVirtualBuilding().getMostRestrictiveFarHelper()
+						: null;
 
-                    for (Floor f : b.getBuilding().getFloors()) {
+				if (!isOccupancyNotApplicable(mostRestrictiveFarHelper)) {
 
-                        if (f.getNumber() == -1) {
+					Floor f = null;
 
-                            if (f.getHeightFromTheFloorToCeiling() != null
-                                    && !f.getHeightFromTheFloorToCeiling().isEmpty()) {
+					for (Floor floor : b.getBuilding().getFloors()) {
+						if (floor.getNumber() == -1)
+							f = floor;
+					}
 
-                                minLength = f.getHeightFromTheFloorToCeiling().stream().reduce(BigDecimal::min).get();
+					if (f != null) {
 
-                                if (minLength.compareTo(BigDecimal.valueOf(2.4)) >= 0) {
-                                    details.put(RULE_NO, RULE_46_6A);
-                                    details.put(DESCRIPTION, BASEMENT_DESCRIPTION_ONE);
-                                    details.put(REQUIRED, ">= 2.4");
-                                    details.put(PROVIDED, minLength.toString());
-                                    details.put(STATUS, Result.Accepted.getResultVal());
-                                    scrutinyDetail.getDetail().add(details);
+						if (isOccupancyNotAllowed(mostRestrictiveFarHelper)) {
+							errors.put("BasementNotAllowed",
+									getLocaleMessage(OBJECTDEFINED, " Basement is not allowed" + b.getName()));
+						} else {
+							// apply rule
 
-                                } else {
-                                    details = new HashMap<>();
-                                    details.put(RULE_NO, RULE_46_6A);
-                                    details.put(DESCRIPTION, BASEMENT_DESCRIPTION_ONE);
-                                    details.put(REQUIRED, ">= 2.4");
-                                    details.put(PROVIDED, minLength.toString());
-                                    details.put(STATUS, Result.Not_Accepted.getResultVal());
-                                    scrutinyDetail.getDetail().add(details);
-                                }
-                            }
-                            minLength = BigDecimal.ZERO;
-                            if (f.getHeightOfTheCeilingOfUpperBasement() != null
-                                    && !f.getHeightOfTheCeilingOfUpperBasement().isEmpty()) {
+							if (f.getHeightFromTheFloorToCeiling() != null
+									&& !f.getHeightFromTheFloorToCeiling().isEmpty()) {
 
-                                minLength = f.getHeightOfTheCeilingOfUpperBasement().stream().reduce(BigDecimal::min).get();
+								minLength = f.getHeightFromTheFloorToCeiling().stream().reduce(BigDecimal::min).get();
 
-                                if (minLength.compareTo(BigDecimal.valueOf(1.2)) >= 0
-                                        && minLength.compareTo(BigDecimal.valueOf(1.5)) < 0) {
-                                    details = new HashMap<>();
-                                    details.put(RULE_NO, RULE_46_6C);
-                                    details.put(DESCRIPTION, BASEMENT_DESCRIPTION_TWO);
-                                    details.put(REQUIRED, "Between 1.2 to 1.5");
-                                    details.put(PROVIDED, minLength.toString());
-                                    details.put(STATUS, Result.Accepted.getResultVal());
-                                    scrutinyDetail.getDetail().add(details);
+								if (minLength.compareTo(BigDecimal.valueOf(2.4)) >= 0) {
+									//details.put(RULE_NO, RULE_46_6A);
+									details.put(RULE_NO, CDGAdditionalService.getByLaws(mostRestrictiveFarHelper, CDGAConstant.BASEMENT));
+									details.put(DESCRIPTION, BASEMENT_DESCRIPTION_ONE);
+									details.put(REQUIRED, ">= 2.4");
+									details.put(PROVIDED, minLength.toString());
+									details.put(STATUS, Result.Accepted.getResultVal());
+									scrutinyDetail.getDetail().add(details);
 
-                                } else {
-                                    details = new HashMap<>();
-                                    details.put(RULE_NO, RULE_46_6C);
-                                    details.put(DESCRIPTION, BASEMENT_DESCRIPTION_TWO);
-                                    details.put(REQUIRED, "Between 1.2 to 1.5");
-                                    details.put(PROVIDED, minLength.toString());
-                                    details.put(STATUS, Result.Not_Accepted.getResultVal());
-                                    scrutinyDetail.getDetail().add(details);
-                                }
-                            }
+								} else {
+									details = new HashMap<>();
+									//details.put(RULE_NO, RULE_46_6A);
+									details.put(RULE_NO, CDGAdditionalService.getByLaws(mostRestrictiveFarHelper, CDGAConstant.BASEMENT));
+									details.put(DESCRIPTION, BASEMENT_DESCRIPTION_ONE);
+									details.put(REQUIRED, ">= 2.4");
+									details.put(PROVIDED, minLength.toString());
+									details.put(STATUS, Result.Not_Accepted.getResultVal());
+									scrutinyDetail.getDetail().add(details);
+								}
+							}
+							minLength = BigDecimal.ZERO;
+							if (f.getHeightOfTheCeilingOfUpperBasement() != null
+									&& !f.getHeightOfTheCeilingOfUpperBasement().isEmpty()) {
 
-                            pl.getReportOutput().getScrutinyDetails().add(scrutinyDetail);
-                        }
-                    }
-                }
-            }
-        }
-        return pl;
-    }
+								minLength = f.getHeightOfTheCeilingOfUpperBasement().stream().reduce(BigDecimal::min)
+										.get();
 
-    @Override
-    public Map<String, Date> getAmendments() {
-        return new LinkedHashMap<>();
-    }
+								if (minLength.compareTo(BigDecimal.valueOf(1.2)) >= 0
+										&& minLength.compareTo(BigDecimal.valueOf(1.5)) < 0) {
+									details = new HashMap<>();
+									//details.put(RULE_NO, RULE_46_6C);
+									details.put(RULE_NO, CDGAdditionalService.getByLaws(mostRestrictiveFarHelper, CDGAConstant.BASEMENT));
+									details.put(DESCRIPTION, BASEMENT_DESCRIPTION_TWO);
+									details.put(REQUIRED, "Between 1.2 to 1.5");
+									details.put(PROVIDED, minLength.toString());
+									details.put(STATUS, Result.Accepted.getResultVal());
+									scrutinyDetail.getDetail().add(details);
+
+								} else {
+									details = new HashMap<>();
+									//details.put(RULE_NO, RULE_46_6C);
+									details.put(RULE_NO, CDGAdditionalService.getByLaws(mostRestrictiveFarHelper, CDGAConstant.BASEMENT));
+									details.put(DESCRIPTION, BASEMENT_DESCRIPTION_TWO);
+									details.put(REQUIRED, "Between 1.2 to 1.5");
+									details.put(PROVIDED, minLength.toString());
+									details.put(STATUS, Result.Not_Accepted.getResultVal());
+									scrutinyDetail.getDetail().add(details);
+								}
+							}
+
+							pl.getReportOutput().getScrutinyDetails().add(scrutinyDetail);
+
+						}
+
+					} else {
+						if (isOccupancyCompulsory(mostRestrictiveFarHelper)) {
+							errors.put("BasementNotDefined",
+									getLocaleMessage(OBJECTNOTDEFINED, " Basement of " + b.getName()));
+						}
+					}
+
+				}
+
+			}
+		}
+
+		if (errors.size() > 0)
+			pl.addErrors(errors);
+
+		return pl;
+	}
+
+	private boolean isOccupancyCompulsory(OccupancyTypeHelper occupancyTypeHelper) {
+		boolean flage = false;
+		if (DxfFileConstants.A_G.equals(occupancyTypeHelper.getSubtype().getCode())
+				|| DxfFileConstants.F_H.equals(occupancyTypeHelper.getSubtype().getCode())
+				|| DxfFileConstants.F_M.equals(occupancyTypeHelper.getSubtype().getCode())
+				|| DxfFileConstants.F_CFI.equals(occupancyTypeHelper.getSubtype().getCode())
+				|| DxfFileConstants.F_BH.equals(occupancyTypeHelper.getSubtype().getCode())
+				|| DxfFileConstants.F_TCIM.equals(occupancyTypeHelper.getSubtype().getCode())
+				|| DxfFileConstants.P_H.equals(occupancyTypeHelper.getSubtype().getCode())
+				|| DxfFileConstants.IT.equals(occupancyTypeHelper.getType().getCode())
+				|| DxfFileConstants.ITH.equals(occupancyTypeHelper.getType().getCode())
+				|| DxfFileConstants.IP.equals(occupancyTypeHelper.getType().getCode()))
+			flage = true;
+
+		return flage;
+	}
+
+	public boolean isOccupancyNotApplicable(OccupancyTypeHelper occupancyTypeHelper) {
+		boolean flage = false;
+		if (DxfFileConstants.R.equals(occupancyTypeHelper.getType().getCode())
+				|| DxfFileConstants.T.equals(occupancyTypeHelper.getType().getCode())
+				|| DxfFileConstants.T1.equals(occupancyTypeHelper.getSubtype().getCode())
+				|| DxfFileConstants.T1.equals(occupancyTypeHelper.getSubtype().getCode())
+
+		)
+			flage = true;
+
+		return flage;
+	}
+
+	private boolean isOccupancyNotAllowed(OccupancyTypeHelper occupancyTypeHelper) {
+		boolean flage = false;
+		if (DxfFileConstants.F_B.equals(occupancyTypeHelper.getSubtype().getCode())
+				|| DxfFileConstants.F_TS.equals(occupancyTypeHelper.getSubtype().getCode())
+
+		)
+			flage = true;
+
+		return flage;
+	}
+
+	private boolean isOccupancyOptional(OccupancyTypeHelper occupancyTypeHelper) {
+		boolean flage = false;
+		if (DxfFileConstants.A_P.equals(occupancyTypeHelper.getSubtype().getCode())
+				|| DxfFileConstants.F_SCO.equals(occupancyTypeHelper.getSubtype().getCode())
+				|| DxfFileConstants.F_PP.equals(occupancyTypeHelper.getSubtype().getCode())
+				|| DxfFileConstants.G.equals(occupancyTypeHelper.getType().getCode())
+				|| DxfFileConstants.P_D.equals(occupancyTypeHelper.getSubtype().getCode())
+				|| DxfFileConstants.P_P.equals(occupancyTypeHelper.getSubtype().getCode())
+				|| DxfFileConstants.P_F.equals(occupancyTypeHelper.getSubtype().getCode())
+				|| DxfFileConstants.P_N.equals(occupancyTypeHelper.getSubtype().getCode())
+				|| DxfFileConstants.P_CC.equals(occupancyTypeHelper.getSubtype().getCode())
+				|| DxfFileConstants.P_SS.equals(occupancyTypeHelper.getSubtype().getCode())
+				|| DxfFileConstants.P_CNA.equals(occupancyTypeHelper.getSubtype().getCode())
+				|| DxfFileConstants.P_R.equals(occupancyTypeHelper.getSubtype().getCode())
+				|| DxfFileConstants.B.equals(occupancyTypeHelper.getType().getCode()))
+
+			flage = true;
+
+		return flage;
+	}
+
+	@Override
+	public Map<String, Date> getAmendments() {
+		return new LinkedHashMap<>();
+	}
 
 }

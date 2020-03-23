@@ -73,13 +73,13 @@
         </div>
     </c:if>
     <div class="row view-content header-color hidden-xs">
-        <label class="col-sm-3 ">
+        <label class="col-sm-6 ">
             <spring:message code="lbl.documentname"/>
         </label>
         <label class="col-sm-3 ">
             <spring:message code="lbl.remarks"/>
         </label>
-        <label class="col-sm-6 ">
+        <label class="col-sm-3 ">
             <spring:message code="lbl.attachdocument"/>
             <c:if test="${dcrDocsManuallyUpload eq true || dcrDocsAutoPopulateAndManuallyUpload eq true}">
                 <span class="text-info view-content"> <spring:message code="lbl.pdf.files.allowed"/> </span>
@@ -90,7 +90,7 @@
     </div>
     <c:forEach items="${bpaApplication.getPermitDcrDocuments()}" var="permitDcrDoc" varStatus="dcrDocStatus">
         <div class="row">
-            <div class="col-sm-3 add-margin">
+            <div class="col-sm-6 add-margin">
                 <c:out value="${permitDcrDoc.dcrDocument.serviceChecklist.checklist.description}"></c:out>
                 <c:if test="${permitDcrDoc.dcrDocument.serviceChecklist.mandatory}">
                     <span class="mandatory"></span>
@@ -110,7 +110,7 @@
             <c:set var="splittedString" value="${fn:split(permitDcrDoc.dcrDocument.serviceChecklist.checklist.description, ' ')}"/>
             <c:set var="checklistName" value="${fn:join(splittedString, '_')}"/>
             <c:if test="${dcrDocsAutoPopulate eq true && dcrDocsManuallyUpload ne true && dcrDocsAutoPopulateAndManuallyUpload ne true}">
-                <div class="col-sm-6 add-margin autoPopulateDcrDocs">
+                <div class="col-sm-3 add-margin autoPopulateDcrDocs">
                     <c:choose>
                         <c:when test="${fn:length(permitDcrDoc.dcrDocument.getOrderedDcrAttachments()) gt 0}">
                             <div class="files-viewer ${checklistName}">
@@ -137,7 +137,7 @@
             </c:if>
 
             <c:if test="${dcrDocsManuallyUpload eq true || dcrDocsAutoPopulateAndManuallyUpload eq true || (dcrDocsAutoPopulate eq false && dcrDocsManuallyUpload eq false && dcrDocsAutoPopulateAndManuallyUpload eq false)}">
-                <div class="col-sm-6 add-margin">
+                <div class="col-sm-3 add-margin">
                     <div class="files-upload-container <c:if test="${permitDcrDoc.dcrDocument.serviceChecklist.mandatory eq true && fn:length(permitDcrDoc.dcrDocument.getOrderedDcrAttachments()) eq 0}">mandatory-dcr-doc</c:if>"
                          data-file-max-size="20"
                          <c:if test="${permitDcrDoc.dcrDocument.serviceChecklist.mandatory eq true && fn:length(permitDcrDoc.dcrDocument.getOrderedDcrAttachments()) eq 0}">required</c:if>

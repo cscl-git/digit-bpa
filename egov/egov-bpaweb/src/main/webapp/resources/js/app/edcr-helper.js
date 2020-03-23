@@ -40,7 +40,6 @@
 
 $(document).ready(
     function ($) {
-
         String.prototype.compose = (function (){
             var re = /\{{(.+?)\}}/g;
             return function (o){
@@ -294,29 +293,38 @@ $(document).ready(
             $('.serviceType').trigger('change');
         }
      
-        function getApplicationType(area, height, occupancy) {   
+        function getApplicationType(plotType, boundaryType) {   
         	$.ajax({
-				url : '/bpa/ajax/getApplicationType?height='+height+'&plotArea='+area+'&occupancy='+occupancy,
+				url : '/bpa/ajax/getApplicationType?plotType='+plotType+'&rootBoundaryType='+boundaryType,
 				type: "GET",
 				 contentType: 'application/json; charset=utf-8',
 				success: function (response) {
 					if(response){
-					$('#applicationTypeSec').val(response.applicationTypeSec);
-	                $('#applicationType').val(response.id);
-                    $('#applicationType').attr("disabled", "disabled");
-                    $('#applicationType').trigger('change');
-
+		                $('#applicationType').val(response.id);
+		                //$('#applicationType').removeAttr("disabled");
+	                    $('#applicationType').trigger('change');
 					}else{
 						console.log('No applications available');
 					}
 					
 				}, 
-				error: function (response) {
-					//
-				}
+				error: function (response) {}
 			});
 
-   }
+        }
+        
+        $( "#applicationType" ).change(function() {
+            $( "#applicationType option:selected" ).each(function() {
+               var str = $(this).text();
+               if(str == "Below two Kanal"){
+            	   $('#noc-document-tab-link').hide();
+               	   $('#noc-document-info').hide();
+               }else{
+            	   $('#noc-document-tab-link').removeAttr("style");
+               	   $('#noc-document-info').removeAttr("style");
+               }
+            });
+        });
 
 
         // Will Auto Populate existing building details
@@ -500,8 +508,8 @@ $(document).ready(
 
         //***********END - Auto populate existing buildings details*********************
 
-        var occupancySubUsage = '<div class="col-sm-1"></div><div><input type="hidden" name="buildingSubUsages[{{blkIdx}}].application""><input type="hidden" name="buildingSubUsages[{{blkIdx}}].subUsageDetails[{{subUsageIdx}}].mainUsage" value="{{mainUsageId}}">' +
-            '<input type="hidden" name="buildingSubUsages[{{blkIdx}}].blockNumber" value="{{blockNumber}}"><input type="hidden" name="buildingSubUsages[{{blkIdx}}].blockName" value="{{blockName}}"> <div class="form-group col-sm-3">' +
+        var occupancySubUsage = '<div class="col-sm-1"></div><div class="col-sm-3"><input type="hidden" name="buildingSubUsages[{{blkIdx}}].application""><input type="hidden" name="buildingSubUsages[{{blkIdx}}].subUsageDetails[{{subUsageIdx}}].mainUsage" value="{{mainUsageId}}">' +
+            '<input type="hidden" name="buildingSubUsages[{{blkIdx}}].blockNumber" value="{{blockNumber}}"><input type="hidden" name="buildingSubUsages[{{blkIdx}}].blockName" value="{{blockName}}"> <div class="form-group">' +
             '<label for="name" class="col-md-12 view-content">{{mainUsage}}<span class="mandatory"></span></label>'+
         '<div>'+
         '<select name="buildingSubUsages[{{blkIdx}}].subUsageDetails[{{subUsageIdx}}].subUsages" multiple id="{{mainUsage}}"'+
@@ -518,9 +526,9 @@ $(document).ready(
                             async: false,
                             crossDomain: true,
                             type: "GET",
-                            url: '/bpa/occupancy/sub-usages/',
+                            url: '/bpa/sub-occupancy/sub-usages/',
                             data: {
-                                occupancy: occupancy.typeHelper.type.name
+                            	subOccupancy: occupancy.typeHelper.subtype.name
                             },
                             contentType: 'application/json; charset=utf-8',
                             success: function (response) {
@@ -601,7 +609,7 @@ $(document).ready(
                 } else {
                     resetDCRPopulatedValues();
                 }
-
+                //$('#applicationType').removeAttr("disabled");
             });
 
             function getEdcrApprovedPlanDetails() {
@@ -659,8 +667,6 @@ $(document).ready(
                                 	if (response.plan.occupancies.length > 0) {
                                 		var occupancies = [];
 	                                    $.each(response.plan.occupancies, function(index, occupancy) {
-	                                        if(response.plan.planInformation.roadWidth < 12 && occupancy.type == 'Industrial')
-                                               bootbox.alert('Road width cannot be less than 12m for industrial occupancy');
 	                                    	occupancies.push(occupancy.typeHelper.type.name);
 	                                    });
 	                                    
@@ -681,15 +687,28 @@ $(document).ready(
                                     setProposedBuildingDetailFromEdcrs(response.plan);
                                     
                                     //Get application type and set to application
-                                    var occupancy = "";
-                                	if (response.plan.occupancies.length == 1) {
-                                		occupancy = response.plan.occupancies[0].typeHelper.type.name;    
-                                	} else {
-                                		if(response.plan.virtualBuilding)
-                                			occupancy=response.plan.virtualBuilding.mostRestrictiveFarHelper.type.name;
+                                    var boundaryType = response.plan.planInfoProperties.ROOT_BOUNDARY_TYPE;
+                                    var plotType = response.plan.planInfoProperties.PLOT_TYPE;
+                                    var fileNo = response.plan.planInfoProperties.KHATA_NO;
+                                    var plotNo = response.plan.planInfoProperties.PLOT_NO;
+                                    var zoneOrLocation = response.plan.planInfoProperties.ZONE;
+                                    var sectorOrVillage = response.plan.planInfoProperties.SECTOR_NUMBER;
+                                    $('#holdingNumber').val("NA"); 
+                                    
+                                    if(typeof fileNo != "undefined") {
+                                    	if (fileNo != "") {
+                                    		$('#khataNumber').val(fileNo);
+                                    		$('#khataNumber').attr("disabled", "disabled");
+                                    	}
                                 	}
-                                    var area =response.plotArea.toFixed(2);
-                                    getApplicationType(area, response.plan.blocks[0].building.buildingHeight,occupancy);
+                                    if(typeof plotNo != "undefined") {
+                                    	if (plotNo != "") {
+                                    		 $('#mspPlotNumber').val(plotNo);                                    
+                                             $('#mspPlotNumber').attr("disabled", "disabled");
+                                    	}
+                                	}
+                                    
+                                    getApplicationType(plotType, boundaryType);
 
                                     if($('#dcrDocsAutoPopulate').val() === 'true' || $('#dcrDocsAutoPopulateAndManuallyUpload').val() === 'true')
                                         autoPopulatePlanScrutinyGeneratedPdfFiles(response.planScrutinyPdfs);
@@ -698,6 +717,33 @@ $(document).ready(
                                         $('.editable').removeAttr("disabled");
                                     else
                                         $('.editable').attr("disabled", "disabled");
+                                    
+                                    if(typeof zoneOrLocation != "undefined") {
+                                    	if (zoneOrLocation != "") {
+                                    		$("#planZoneOrLocation").val(zoneOrLocation);
+                                    	}
+                                    }
+                                    if(typeof sectorOrVillage != "undefined") {
+                                    	if (sectorOrVillage != "") {
+                                    		$("#planSectorOrVillage").val(sectorOrVillage);
+                                    	}
+                                    }
+                                    if(typeof boundaryType != "undefined") {
+                                    	if (boundaryType != "") {
+                                    		$("#planBoundaryType").val(boundaryType);
+                                    		if(typeof boundaryType != "undefined") {
+                                            	if (boundaryType != "") {
+				                                    $("#REVENUEAreaCategory option").each(function() {
+				                                      if($(this).text().toUpperCase() == boundaryType.toUpperCase()) {
+				 										$(this).attr('selected', 'selected');
+				 										$("#REVENUEAreaCategory").change();
+				 										$('#REVENUEAreaCategory').attr("disabled", "disabled");
+				 									  }                        
+				 								   });
+                                            	}
+                                    		}
+                                    	}
+                                    }                                    
                                 }
 
                                 if (response.plan.planInformation.demolitionArea >= 0) {
@@ -719,7 +765,7 @@ $(document).ready(
                                 $('#extentOfLand').val(response.plotArea.toFixed(2));
                                 setExtentOfLand();
                             }
-                            
+                           // $('#applicationType').removeAttr("disabled");
                         }
                     },
                     error: function (response) {
@@ -729,170 +775,15 @@ $(document).ready(
             }
         //to update noc document is required
         function updateNocRequired(planInformation){
-        	if(planInformation.nocIrrigationDept === 'YES'){
-        		$('#APPROVED_IDA_NOC').attr('disabled',true);
-            	$('#REJECTED_IDA_NOC').attr('disabled',true);
-                $('span.mandatory._IDA_NOC').show();
-                if($('button.btn_IDA_NOC').length==1){
-                	if($('#nocStatusUpdated').val() == "false" && $('#citizenOrBusinessUser').val() == "false" && (($('#isPermitApplFeeReq').val() =="NO" && $('#applicationNo').val()!="")||
-                			($('#isPermitApplFeeReq').val() =="YES" && $('#permitApplFeeCollected').val()=="YES"))){
-	                	$('th.thbtn').show();
-	                    $('td.tdbtn').show();
-                	}else{
-                		$('th.thbtn').hide();
-	                    $('td.tdbtn').hide();
-                	}
-                }else if($('input.hidden_IDA_NOC').val() != 'initiated' && $('input.autohidden_IDA_NOC').val() != 'autoinitiate' && $('input.apphidden_IDA_NOC').val() != 'initiated' ){
-                	$('div._IDA_NOC').attr('required','required');
-                	$('div.divfv_IDA_NOC').show();
-                }
-                
-                if($('input.hidden_IDA_NOC').val() == 'initiate' || $('input.autohidden_IDA_NOC').val() == 'autoinitiate'){
-                    $('span.mandatory._IDA_NOC').hide();
-                }
-                
-            
-                if($('#nocAppl').length > 0)
-                {
-                	$('th.thstatus').show();
-                    $('td.tdstatus').show();    
-                    $('th.thsla').show();
-                    $('td.tdsla').show(); 
-                    $('th.thda').show();
-                    $('td.tdda').show(); 
-                }
-        	}
-        	if(planInformation.nocNearMonument === 'YES'){
-        		$('#APPROVED_NMA_NOC').attr('disabled',true);
-            	$('#REJECTED_NMA_NOC').attr('disabled',true);
-                $('span.mandatory._NMA_NOC').show();
-                if($('button.btn_NMA_NOC').length==1){
-                	if($('#nocStatusUpdated').val() == "false" &&  $('#citizenOrBusinessUser').val() == "false" && (($('#isPermitApplFeeReq').val() =="NO" && $('#applicationNo').val()!="")||
-                			($('#isPermitApplFeeReq').val() =="YES" && $('#permitApplFeeCollected').val()=="YES"))){
-	                	$('th.thbtn').show();
-	                    $('td.tdbtn').show();
-                	}else{
-                		$('th.thbtn').hide();
-	                    $('td.tdbtn').hide();
-                	}
-                }else if($('input.hidden_NMA_NOC').val() != 'initiate' && $('input.autohidden_NMA_NOC').val() != 'autoinitiate' && $('input.apphidden_NMA_NOC').val() != 'initiated' ){
-                	$('div._NMA_NOC').attr('required','required');
-                	$('div.divfv_NMA_NOC').show();
-                }
-                
-                if($('input.hidden_NMA_NOC').val() == 'initiate' || $('input.autohidden_NMA_NOC').val() == 'autoinitiate'){
-                    $('span.mandatory._NMA_NOC').hide();
-                }
-                
-                if($('#nocAppl').length > 0)
-                {
-                	$('th.thstatus').show();
-                    $('td.tdstatus').show(); 
-                    $('th.thsla').show();
-                    $('td.tdsla').show(); 
-                    $('th.thda').show();
-                    $('td.tdda').show(); 
-                }
-        	}
-        	
-        	if(planInformation.nocStateEnvImpact === 'YES'){
-            	$('#APPROVED_MOEF_NOC').attr('disabled',true);
-            	$('#REJECTED_MOEF_NOC').attr('disabled',true);
-            	$('span.mandatory._MOEF_NOC').show();
-            	if($('button.btn_MOEF_NOC').length==1){
-                	if($('#nocStatusUpdated').val() == "false" && $('#citizenOrBusinessUser').val() == "false" && (($('#isPermitApplFeeReq').val() =="NO" && $('#applicationNo').val()!="")||
-                			($('#isPermitApplFeeReq').val() =="YES" && $('#permitApplFeeCollected').val()=="YES"))){
-	                	$('th.thbtn').show();
-	                    $('td.tdbtn').show();
-                	}else{
-                		$('th.thbtn').hide();
-	                    $('td.tdbtn').hide();
-                	}
-                }else if($('input.hidden_MOEF_NOC').val() != 'initiate' && $('input.autohidden_MOEF_NOC').val() != 'autoinitiate' && $('input.apphidden_IDA_NOC').val() != 'initiated' ){
-                	$('div._MOEF_NOC').attr('required','required');
-                	$('div.divfv_MOEF_NOC').show();
-                }
-            	
-            	 if($('input.hidden_MOEF_NOC').val() == 'initiate' || $('input.autohidden_MOEF_NOC').val() == 'autoinitiate'){
-                     $('span.mandatory._MOEF_NOC').hide();
-                 }
-            	
-            
-            	if($('#nocAppl').length > 0)
-                {
-                	$('th.thstatus').show();
-                    $('td.tdstatus').show(); 
-                    $('th.thsla').show();
-                    $('td.tdsla').show();
-                    $('th.thda').show();
-                    $('td.tdda').show(); 
-                }
+        	if($('#nocAppl').length > 0) {
+            	$('th.thstatus').show();
+                $('td.tdstatus').show();    
+                $('th.thsla').show();
+                $('td.tdsla').show(); 
+                $('th.thda').show();
+                $('td.tdda').show(); 
             }
-        	
-            if(planInformation.nocNearAirport === 'YES'){
-            	$('#APPROVED_AAI_NOC').attr('disabled',true);
-            	$('#REJECTED_AAI_NOC').attr('disabled',true);
-                $('span.mandatory._AAI_NOC').show();
-                if($('button.btn_AAI_NOC').length==1){
-                	if($('#nocStatusUpdated').val() == "false" && $('#citizenOrBusinessUser').val() == "false" && (($('#isPermitApplFeeReq').val() =="NO" && $('#applicationNo').val()!="")||
-                			($('#isPermitApplFeeReq').val() =="YES" && $('#permitApplFeeCollected').val()=="YES"))){
-	                	$('th.thbtn').show();
-	                    $('td.tdbtn').show();
-                	}else{
-                		$('th.thbtn').hide();
-	                    $('td.tdbtn').hide();
-                	}
-                }else if($('input.hidden_AAI_NOC').val() != 'initiate' && $('input.autohidden_AAI_NOC').val() != 'autoinitiate' && $('input.apphidden_AAI_NOC').val() != 'initiated' ){
-                	$('div._AAI_NOC').attr('required','required');
-                	$('div.divfv_AAI_NOC').show();
-                }
-                
-                if($('input.hidden_AAI_NOC').val() == 'initiate' || $('input.autohidden_AAI_NOC').val() == 'autoinitiate'){
-                    $('span.mandatory._AAI_NOC').hide();
-                }
-                
-                if($('#nocAppl').length > 0)
-                {
-                	$('th.thstatus').show();
-                    $('td.tdstatus').show();
-                    $('th.thsla').show();
-                    $('td.tdsla').show(); 
-                    $('th.thda').show();
-                    $('td.tdda').show(); 
-                }
-            }
-            if(planInformation.nocFireDept === 'YES'){
-            	$('#APPROVED_FIRE_NOC').attr('disabled',true);
-            	$('#REJECTED_FIRE_NOC').attr('disabled',true);
-
-                $('span.mandatory._FIRE_NOC').show();
-                if($('button.btn_FIRE_NOC').length==1){
-                	if($('#nocStatusUpdated').val() == "false" && $('#citizenOrBusinessUser').val() == "false" && (($('#isPermitApplFeeReq').val() =="NO" && $('#applicationNo').val()!="")||
-                			($('#isPermitApplFeeReq').val() =="YES" && $('#permitApplFeeCollected').val()=="YES"))){
-	                	$('th.thbtn').show();
-	                    $('td.tdbtn').show();
-                	}else{
-                		$('th.thbtn').hide();
-	                    $('td.tdbtn').hide();
-                	}
-                }else if($('input.hidden_FIRE_NOC').val() != 'initiate' && $('input.autohidden_FIRE_NOC').val() != 'autoinitiate' && $('input.apphidden_FIRE_NOC').val() != 'initiated'){
-                	$('div._FIRE_NOC').attr('required','required');
-                	$('div.divfv_FIRE_NOC').show();
-                }
-                
-                if($('input.hidden_FIRE_NOC').val() == 'initiate' || $('input.autohidden_FIRE_NOC').val() == 'autoinitiate'){
-                    $('span.mandatory._FIRE_NOC').hide();
-                }
-                if($('#nocAppl').length > 0)
-                {
-                	$('th.thstatus').show();
-                    $('td.tdstatus').show();  
-                    $('th.thsla').show();
-                    $('td.tdsla').show(); 
-                    $('th.thda').show();
-                    $('td.tdda').show(); 
-                }
-            }
+        	return;
         }
         // Auto populate system generated plan scrutiny checklist documents
         function autoPopulatePlanScrutinyGeneratedPdfFiles(planScrutinyPdfs) {
@@ -950,13 +841,6 @@ $(document).ready(
                     $('#block'+i+'-desc').html('');
                     $('#block'+i).html('');
                 }
-                /*$("#edcrBuildingAreaDetails tbody tr").each(function() {
-                    $(this).closest('tr').remove();
-                    $("#edcrBuildingAreaDetails tfoot tr td:eq(4)").html('');
-                    $("#edcrBuildingAreaDetails tfoot tr td:eq(5)").html('');
-                    $("#edcrBuildingAreaDetails tfoot tr td:eq(6)").html('');
-                });
-                $('.dcr-reset-values').val('');*/
             }
 
             function setExtentOfLand() {

@@ -58,106 +58,197 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.egov.common.entity.edcr.Block;
+import org.egov.common.entity.edcr.OccupancyTypeHelper;
 import org.egov.common.entity.edcr.Plan;
 import org.egov.common.entity.edcr.Result;
 import org.egov.common.entity.edcr.ScrutinyDetail;
 import org.egov.common.entity.edcr.SetBack;
+import org.egov.edcr.constants.DxfFileConstants;
+import org.egov.edcr.service.cdg.CDGAConstant;
+import org.egov.edcr.service.cdg.CDGAdditionalService;
 import org.egov.edcr.utility.DcrConstants;
 import org.springframework.stereotype.Service;
 
 @Service
 public class PlantationGreenStrip extends FeatureProcess {
 
-    private static final String RULE_37_6 = "37-6";
+	private static final String RULE_37_6 = "37-6";
 
-    @Override
-    public Plan validate(Plan pl) {
-        return null;
-    }
+	@Override
+	public Plan validate(Plan pl) {
+		return null;
+	}
 
-    @Override
-    public Plan process(Plan pl) {
-        if (pl.getPlot() != null && pl.getPlot().getArea().compareTo(BigDecimal.valueOf(300)) > 0) {
-            for (Block block : pl.getBlocks()) {
+	@Override
+	public Plan process(Plan pl) {
+		// if (pl.getPlot() != null &&
+		// pl.getPlot().getArea().compareTo(BigDecimal.valueOf(300)) > 0) {
 
-                ScrutinyDetail scrutinyDetail = new ScrutinyDetail();
-                scrutinyDetail.addColumnHeading(1, RULE_NO);
-                scrutinyDetail.addColumnHeading(2, DESCRIPTION);
-                scrutinyDetail.addColumnHeading(3, PERMISSIBLE);
-                scrutinyDetail.addColumnHeading(4, PROVIDED);
-                scrutinyDetail.addColumnHeading(5, STATUS);
-                scrutinyDetail.setKey("Block_" + block.getNumber() + "_" + "Continuous Green Planting Strip");
+		OccupancyTypeHelper mostRestrictiveFarHelper = pl.getVirtualBuilding() != null
+				? pl.getVirtualBuilding().getMostRestrictiveFarHelper()
+				: null;
 
-                boolean isWidthAccepted = false;
-                // boolean isHeightAccepted = false;
-                BigDecimal minWidth = BigDecimal.ZERO;
-                // BigDecimal minHeight = BigDecimal.ZERO;
-                List<BigDecimal> widths = block.getPlantationGreenStripes().stream()
-                        .map(greenStrip -> greenStrip.getWidth()).collect(Collectors.toList());
-                /*
-                 * List<BigDecimal> heights = block.getPlantationGreenStripes().stream() .map(greenStripe ->
-                 * greenStripe.getHeight()).collect(Collectors.toList());
-                 */
-                // List<BigDecimal> minimumDistances = new ArrayList<>();
+		if (mostRestrictiveFarHelper != null && isOccupancyTypeApplicable(mostRestrictiveFarHelper)) {
+			BigDecimal exceptedWidth = new BigDecimal("13.71");
+			BigDecimal exceptedArea = BigDecimal.ZERO;
+			new BigDecimal("501.67");
 
-                if (widths.isEmpty()) {
-                    pl.addError("RULE_37_6", getLocaleMessage(DcrConstants.OBJECTNOTDEFINED,
-                            "Block " + block.getNumber() + " " + "Continuous Green Planting Strip"));
-                }
-                /*
-                 * for (SetBack setBack : block.getSetBacks()) { if (setBack.getRearYard() != null)
-                 * minimumDistances.add(setBack.getRearYard().getHeight()); if (setBack.getSideYard1() != null)
-                 * minimumDistances.add(setBack.getSideYard1().getHeight()); if (setBack.getSideYard2() != null)
-                 * minimumDistances.add(setBack.getSideYard2().getHeight()); }
-                 */
+			if (pl.getPlot().getArea() != null) {
+				exceptedArea = pl.getPlot().getArea().multiply(new BigDecimal("0.15"));
 
-                if (!widths.isEmpty()) {
-                    minWidth = widths.stream().reduce(BigDecimal::min).get();
-                    // minHeight = heights.stream().reduce(BigDecimal::min).get();
-                    // BigDecimal minLength = Collections.min(minimumDistances);
+				if (exceptedArea.compareTo(new BigDecimal("501.67")) <= 0) {
+					exceptedArea = new BigDecimal("501.67");
+				}
 
-                    if (minWidth.compareTo(BigDecimal.valueOf(0.6)) >= 0) {
-                        isWidthAccepted = true;
+			}
 
-                    }
+			List<BigDecimal> providedWidths = new ArrayList<BigDecimal>();
+			BigDecimal providedArea = BigDecimal.ZERO;
 
-                    /*
-                     * if (minHeight.doubleValue()>=1d) { isHeightAccepted = true; }
-                     */
+			for (Block block : pl.getBlocks()) {
 
-                    /*
-                     * if (minHeight.doubleValue()>=minLength.doubleValue()) { isHeightAccepted = true; }
-                     */
-                    buildResult(pl, scrutinyDetail, isWidthAccepted, "Width of continuos plantation green strip",
-                            ">= 0.6",
-                            minWidth.setScale(DcrConstants.DECIMALDIGITS_MEASUREMENTS, DcrConstants.ROUNDMODE_MEASUREMENTS)
-                                    .toString());
-                    /*
-                     * buildResult(pl, scrutinyDetail, isHeightAccepted, "length of continuos plantation green strip ",
-                     * "should be equal to rear or side yard",
-                     * minHeight.setScale(DcrConstants.DECIMALDIGITS_MEASUREMENTS,DcrConstants.ROUNDMODE_MEASUREMENTS).toString())
-                     * ;
-                     */
-                }
-            }
-        }
-        return pl;
-    }
+				if (block.getPlantationGreenStripes() != null && !block.getPlantationGreenStripes().isEmpty()) {
+					List<BigDecimal> widths = block.getPlantationGreenStripes().stream()
+							.map(greenStrip -> greenStrip.getWidth()).collect(Collectors.toList());
 
-    private void buildResult(Plan pl, ScrutinyDetail scrutinyDetail, boolean valid, String description, String permited,
-            String provided) {
-        Map<String, String> details = new HashMap<>();
-        details.put(RULE_NO, RULE_37_6);
-        details.put(DESCRIPTION, description);
-        details.put(PERMISSIBLE, permited);
-        details.put(PROVIDED, provided);
-        details.put(STATUS, valid ? Result.Accepted.getResultVal() : Result.Not_Accepted.getResultVal());
-        scrutinyDetail.getDetail().add(details);
-        pl.getReportOutput().getScrutinyDetails().add(scrutinyDetail);
-    }
+					List<BigDecimal> areas = block.getPlantationGreenStripes().stream()
+							.map(greenStrip -> greenStrip.getArea()).collect(Collectors.toList());
 
-    @Override
-    public Map<String, Date> getAmendments() {
-        return new LinkedHashMap<>();
-    }
+					providedArea = providedArea.add(areas.stream().reduce(BigDecimal::add).get());
+					providedWidths.addAll(widths);
+				}
+
+			}
+
+			if (isOccupancyTypeApplicable(mostRestrictiveFarHelper)) {
+
+				ScrutinyDetail scrutinyDetail = new ScrutinyDetail();
+				scrutinyDetail.addColumnHeading(1, RULE_NO);
+				scrutinyDetail.addColumnHeading(2, DESCRIPTION);
+				scrutinyDetail.addColumnHeading(3, PERMISSIBLE);
+				scrutinyDetail.addColumnHeading(4, PROVIDED);
+				scrutinyDetail.addColumnHeading(5, STATUS);
+				scrutinyDetail.setKey("Common_Organized Green Planting Strip");
+
+				boolean isWidthAccepted = false;
+				boolean isAreaAccepted = false;
+
+				if (providedWidths.isEmpty()) {
+					pl.addError("RULE_37_6",
+							getLocaleMessage(DcrConstants.OBJECTNOTDEFINED, "Organized Green Planting Strip"));
+				}
+				
+				BigDecimal providedMinWidth = providedWidths.stream().reduce(BigDecimal::min).get();
+
+				if (providedMinWidth.compareTo(exceptedWidth) >= 0)
+					isWidthAccepted = true;
+
+				if (providedArea.compareTo(exceptedArea) >= 0)
+					isAreaAccepted = true;
+
+				buildResult(pl, scrutinyDetail, isWidthAccepted, "Width of Organized plantation green strip",
+						">= " + exceptedWidth,
+						providedMinWidth
+								.setScale(DcrConstants.DECIMALDIGITS_MEASUREMENTS, DcrConstants.ROUNDMODE_MEASUREMENTS)
+								.toString());
+
+				buildResult(pl, scrutinyDetail, isAreaAccepted, "Area of Organized plantation green strip",
+						">= " + exceptedArea + " sqm",
+						providedArea
+								.setScale(DcrConstants.DECIMALDIGITS_MEASUREMENTS, DcrConstants.ROUNDMODE_MEASUREMENTS)
+								.toString());
+
+			}
+
+			for (Block block : pl.getBlocks()) {
+				/*
+				 * 
+				 * ScrutinyDetail scrutinyDetail = new ScrutinyDetail();
+				 * scrutinyDetail.addColumnHeading(1, RULE_NO);
+				 * scrutinyDetail.addColumnHeading(2, DESCRIPTION);
+				 * scrutinyDetail.addColumnHeading(3, PERMISSIBLE);
+				 * scrutinyDetail.addColumnHeading(4, PROVIDED);
+				 * scrutinyDetail.addColumnHeading(5, STATUS); scrutinyDetail.setKey("Block_" +
+				 * block.getNumber() + "_" + "Continuous Green Planting Strip");
+				 * 
+				 * boolean isWidthAccepted = false; // boolean isHeightAccepted = false; boolean
+				 * isAreaAccepted = false; BigDecimal minWidth = BigDecimal.ZERO; BigDecimal
+				 * area = BigDecimal.ZERO; // BigDecimal minHeight = BigDecimal.ZERO;
+				 * List<BigDecimal> widths = block.getPlantationGreenStripes().stream()
+				 * .map(greenStrip -> greenStrip.getWidth()).collect(Collectors.toList());
+				 * List<BigDecimal> areas = block.getPlantationGreenStripes().stream()
+				 * .map(greenStrip -> greenStrip.getArea()).collect(Collectors.toList());
+				 * 
+				 * 
+				 * List<BigDecimal> heights = block.getPlantationGreenStripes().stream()
+				 * .map(greenStripe -> greenStripe.getHeight()).collect(Collectors.toList());
+				 * 
+				 * // List<BigDecimal> minimumDistances = new ArrayList<>();
+				 * 
+				 * if (widths.isEmpty()) { pl.addError("RULE_37_6",
+				 * getLocaleMessage(DcrConstants.OBJECTNOTDEFINED, "Block " + block.getNumber()
+				 * + " " + "Continuous Green Planting Strip")); }
+				 * 
+				 * for (SetBack setBack : block.getSetBacks()) { if (setBack.getRearYard() !=
+				 * null) minimumDistances.add(setBack.getRearYard().getHeight()); if
+				 * (setBack.getSideYard1() != null)
+				 * minimumDistances.add(setBack.getSideYard1().getHeight()); if
+				 * (setBack.getSideYard2() != null)
+				 * minimumDistances.add(setBack.getSideYard2().getHeight()); }
+				 * 
+				 * 
+				 * if (!widths.isEmpty()) { minWidth =
+				 * widths.stream().reduce(BigDecimal::min).get(); // minHeight =
+				 * heights.stream().reduce(BigDecimal::min).get(); // BigDecimal minLength =
+				 * Collections.min(minimumDistances);
+				 * 
+				 * if (minWidth.compareTo(exceptedWidth) >= 0) { isWidthAccepted = true;
+				 * 
+				 * }
+				 * 
+				 * 
+				 * if (minHeight.doubleValue()>=1d) { isHeightAccepted = true; }
+				 * 
+				 * 
+				 * 
+				 * if (minHeight.doubleValue()>=minLength.doubleValue()) { isHeightAccepted =
+				 * true; }
+				 * 
+				 * buildResult(pl, scrutinyDetail, isWidthAccepted,
+				 * "Width of continuos plantation green strip", ">= "+exceptedWidth,
+				 * minWidth.setScale(DcrConstants.DECIMALDIGITS_MEASUREMENTS,
+				 * DcrConstants.ROUNDMODE_MEASUREMENTS).toString());
+				 * 
+				 * buildResult(pl, scrutinyDetail, isHeightAccepted,
+				 * "length of continuos plantation green strip ",
+				 * "should be equal to rear or side yard",
+				 * minHeight.setScale(DcrConstants.DECIMALDIGITS_MEASUREMENTS,DcrConstants.
+				 * ROUNDMODE_MEASUREMENTS).toString()) ;
+				 * 
+				 * }
+				 */}
+		}
+		return pl;
+	}
+
+	public boolean isOccupancyTypeApplicable(OccupancyTypeHelper occupancyTypeHelper) {
+		return DxfFileConstants.A_G.equals(occupancyTypeHelper.getSubtype().getCode());
+	}
+
+	private void buildResult(Plan pl, ScrutinyDetail scrutinyDetail, boolean valid, String description, String permited,
+			String provided) {
+		Map<String, String> details = new HashMap<>();
+		details.put(RULE_NO, CDGAdditionalService.getByLaws(pl, CDGAConstant.ORGANIZED_GREEN_PARKS));
+		details.put(DESCRIPTION, description);
+		details.put(PERMISSIBLE, permited);
+		details.put(PROVIDED, provided);
+		details.put(STATUS, valid ? Result.Accepted.getResultVal() : Result.Not_Accepted.getResultVal());
+		scrutinyDetail.getDetail().add(details);
+		pl.getReportOutput().getScrutinyDetails().add(scrutinyDetail);
+	}
+
+	@Override
+	public Map<String, Date> getAmendments() {
+		return new LinkedHashMap<>();
+	}
 }

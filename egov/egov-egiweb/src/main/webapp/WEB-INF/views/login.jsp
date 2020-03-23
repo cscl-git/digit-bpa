@@ -103,30 +103,24 @@
 					<div class = "blue-background"></div>
 					<div class = "login-content-wrapper page-common-padding col-md-12">
 						<div class = "new-login-header padding0 col-md-12">
-							<span class="f-medium login-title-1 bold color-white">${sessionScope.citymunicipalityname}</span>
-							<a href="http://www.egovernments.org" data-strwindname="egovsite"
+							<%-- <span class="f-medium login-title-1 bold color-white">${sessionScope.citymunicipalityname}</span> --%>
+							<span><img src="/egi/downloadfile/logo" height="67" class="rounded"></span>
+							<%-- <a href="http://www.egovernments.org" data-strwindname="egovsite"
 								class="open-popup"> 
 								<img src="<cdn:url value='/resources/global/images/digit-logo-white.png'/>"
 									title="Powered by eGovernments" width = "100" alt="" />
-							</a>
+							</a> --%>
 						</div>
 						<c:set var="tenantId" value="<%=tenantId%>" />
 						<div class = "new-login-content padding0 col-md-12">
-							<div class = "login-left-cont padding0 col-md-6">
-								<span class = "f-light login-title-2 color-white">Building Plan Approvals Made <span class = "f-medium">Easy</span></span>
-								<div class = "login-action-cont padding0 f-regular">
-									<%-- <a class = "login-create-link padding0 col-md-6" href="#"
-										onclick="window.open('/portal/citizen/signup','CTZ',config='height=800, width=1100, toolbar=no, menubar=no, scrollbars=yes, resizable=no,location=no, directories=no, status=no')">
-										<div class = "create-button col-md-18">
-											<spring:message code="lbl.create.ac.citizen" />
-										</div>
-									</a> --%>
-									<%-- <a class = "login-create-link padding0 col-md-6" href="#"
-										onclick="window.open('/bpa/stakeholder/payregfee','BL',config='height=800, width=1100, toolbar=no, menubar=no, scrollbars=yes, resizable=no,location=no, directories=no, status=no')">
-										<div class = "create-button col-md-12">
-											<spring:message code="lbl.stakeholder.reg.fee.pay" />
-										</div>
-									</a> --%>
+							<div class = "login-left-cont padding0 col-md-6" style="color: #ffffff;">
+								<h1 class="animated fadeInUpBig" style="font-size: 46px;margin-bottom: 0;line-height: 27px;letter-spacing: 2px;font-family: 'allerregular';font-weight: normal;margin: 20px 0 60px 0;">
+									Building Plan Approvals
+								</h1>
+								<div class="animated fadeInDownBig" style="max-width: 700px;">
+									Citizens, Officials, and other stakeholders can submit and track applications in real time and obtain approvals without having to physically visit an office.
+								</div>
+								<%-- <div class = "login-action-cont padding0 f-regular">									
 									<c:if test="${tenantId == 'state' }">
 									   <a class = "login-create-link padding0 col-md-6" href="#"
 											onclick="window.open('/bpa/stakeholder/createbycitizen','BL',config='height=800, width=1100, toolbar=no, menubar=no, scrollbars=yes, resizable=no,location=no, directories=no, status=no')">
@@ -135,9 +129,9 @@
 											</div>
 										</a>
 									</c:if>
-								</div>
+								</div> --%>
 								
-								<c:if test="${tenantId == 'state' }">
+								<%-- <c:if test="${tenantId == 'state' }">
 									<div class = "application-action-cont">
 										<div class="application-card bpa-card-new card">
 										  <div class="card-body">
@@ -158,7 +152,7 @@
 										  </div>
 										</div>
 									</div>
-								</c:if>
+								</c:if> --%>
 								<%-- <div class = "application-action-cont">
 									<div class="application-card bpa-card-new card">
 									  <div class="card-body">
@@ -190,10 +184,10 @@
 											method="post" role="form" id="signform"
 											<div class = "md-form clearfix">
 												<div class = "col-md-12 padding0" style = "margin: 36px 0 16px 0">
-													<label class = "login-input-label" for="j_username">Mobile No. / Login ID</label>
+													<label class = "login-input-label" for="j_username">Login ID</label>
 													<input name="j_username" id="j_username" 
 														style="font-family: Roboto_Regular;" 
-														placeholder="Enter Mobile No. / Login ID" 
+														placeholder="Enter Login ID" 
 														required="" type="text" autofocus="autofocus"
 														autocomplete="off" class="login-input form-control" />
 												</div>
@@ -332,10 +326,10 @@
 								<!-- <div class="input-group-addon style-label">
 									<i class="fa fa-user style-color"></i>
 								</div> -->
-								<label class = "login-input-label" for="identity">Mobile Number / Login ID</label>
+								<label class = "login-input-label" for="identity">Login ID</label>
 								<input type="text" class="login-input form-control style-form"
 									name="identity" id="emailOrMobileNum" required="required"
-									placeholder="Mobile Number / Login ID" autocomplete="off"
+									placeholder="Login ID" autocomplete="off"
 									style="font-family: Roboto_Regular;" /> 
 								<input type="hidden" name="originURL" id="originURL" /> 
 								<input type="hidden" name="byOTP" id="byOtp" style="font-family: Roboto_Regular;" />

@@ -330,7 +330,7 @@ public class BpaReportsService {
                 bpaRegister.setFieldVerificationDate(appointmentScheduledList.get(0).getAppointmentDate());
             bpaRegister.setNocDetails(getNocDetails(application));
             bpaRegister.setBuildingPermitNo(application.getPlanPermissionNumber());
-            if (!application.getPermitFee().isEmpty()) {
+            /*if (!application.getPermitFee().isEmpty()) {
                 BigDecimal permitFee = BigDecimal.ZERO;
                 BigDecimal additionalFee = BigDecimal.ZERO;
                 BigDecimal otherFee = BigDecimal.ZERO;
@@ -359,7 +359,7 @@ public class BpaReportsService {
                 bpaRegister.setShelterFund(shelterFund);
                 bpaRegister.setLabourcess(labourcess);
                 bpaRegister.setDevelopmentPermitFees(developmentPermitFees);
-            }
+            }*/
             if (application.getStatus().getCode().equalsIgnoreCase(APPLICATION_STATUS_CANCELLED)) {
                 bpaRegister.setRejectionReason(bpaNoticeUtil.buildRejectionReasons(application, false));
                 Assignment rejectedOwner;

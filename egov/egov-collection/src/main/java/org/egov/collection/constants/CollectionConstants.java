@@ -372,9 +372,9 @@ public final class CollectionConstants {
     public static final String SERVICECODE_PROFESSIONALTAX = "PRFT";
     public static final String SERVICECODE_AXIS = "AXIS";
     public static final String SERVICECODE_SBIMOPS = "SBIMOPS";
-    public static final String SERVICECODE_ATOM = "ATOM";
+    public static final String SERVICECODE_ATOM = "APG";
     public static final String SERVICECODE_LAMS = "LAMS";
-
+    
     // Online Payment Statuses
     public static final String ONLINEPAYMENT_STATUS_CODE_PENDING = "ONLINE_STATUS_PENDING";
     public static final String ONLINEPAYMENT_STATUS_CODE_SUCCESS = "ONLINE_STATUS_SUCCESS";
@@ -655,6 +655,16 @@ public final class CollectionConstants {
     public static final String ATOM_MERCHANTID = "merchantid";
     public static final String ATOM_MERCHANT_TXNID = "merchanttxnid";
     public static final String ATOM_TDATE = "tdate";
+    public static final String ATOM_REQ_HashKey="reqHashKey";
+    public static final String ATOM_ENCDATA="encdata";
+    
+    public static final String ATOM_CUSTOMER_NAME="udf1";
+    public static final String ATOM_CUSTOMER_EMAIL="udf2";
+    public static final String ATOM_CUSTOMER_MOBILE="udf3";
+    public static final String ATOM_CUSTOMER_BILLING_ADDRESS="udf4";
+    public static final String ATOM_CUSTOMER_MERCHANT_DATA="udf5";
+    		
+    
     public static final ArrayList<String> ATOM_AUTHORISATION_CODES_WAITINGFOR_PAY_GATEWAY_RESPONSE = new ArrayList<String>() {
         {
             add("Pending From Bank");

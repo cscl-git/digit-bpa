@@ -141,6 +141,9 @@ import org.egov.bpa.transaction.service.messaging.BPASmsAndEmailService;
 import org.egov.bpa.utils.BpaConstants;
 import org.egov.bpa.utils.BpaUtils;
 import org.egov.common.entity.bpa.Occupancy;
+import org.egov.common.entity.dcr.helper.EdcrApplicationInfo;
+import org.egov.common.entity.edcr.OccupancyTypeHelper;
+import org.egov.common.entity.edcr.Plan;
 import org.egov.commons.entity.Source;
 import org.egov.demand.model.EgDemand;
 import org.egov.infra.admin.master.entity.Boundary;
@@ -175,6 +178,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.multipart.MultipartFile;
 
 @Service
@@ -265,6 +270,11 @@ public class ApplicationBpaService extends GenericBillGeneratorService {
     private RevocationNumberGenerator revocationNumberGenerator;
     @Autowired
     private PermitCoApplicantService coApplicantService;
+    
+    @Autowired
+	private PermitFeeCalculationService permitFeeCalculationService;
+    @Autowired
+    private DcrRestService drcRestService;
 
     public Session getCurrentSession() {
         return entityManager.unwrap(Session.class);
@@ -370,6 +380,11 @@ public class ApplicationBpaService extends GenericBillGeneratorService {
 
     private Long getZone(final BpaApplication application) {
         return application.getZoneId();
+    }
+    
+    public Plan getPlanInfo(final String edcrNumber) {		
+		EdcrApplicationInfo edcrPlanInfo = drcRestService.getDcrPlanInfo(edcrNumber, ((ServletRequestAttributes)RequestContextHolder.getRequestAttributes()).getRequest());		 
+        return edcrPlanInfo.getPlan();
     }
 
     public void buildDefaultPermitConditionsList(final BpaApplication application) {
@@ -547,8 +562,8 @@ public class ApplicationBpaService extends GenericBillGeneratorService {
             application.setStatus(bpaStatus);
         }
 
-        if (application.getIsOneDayPermitApplication() && (APPLICATION_STATUS_DOC_VERIFIED
-                .equalsIgnoreCase(application.getState().getValue())
+        if (application.getIsOneDayPermitApplication() && 
+        		(APPLICATION_STATUS_DOC_VERIFIED.equalsIgnoreCase(application.getState().getValue())
                 || APPLICATION_STATUS_SECTION_CLRK_APPROVED.equalsIgnoreCase(application.getState().getValue()))) {
 
             String feeCalculationMode = bpaUtils.getBPAFeeCalculationMode();
@@ -568,7 +583,8 @@ public class ApplicationBpaService extends GenericBillGeneratorService {
             }
         }
         if (!WF_SAVE_BUTTON.equalsIgnoreCase(workFlowAction)
-                && APPLICATION_STATUS_FIELD_INS.equalsIgnoreCase(application.getStatus().getCode())
+        		&& !WF_INITIATE_REJECTION_BUTTON.equalsIgnoreCase(workFlowAction)
+                && APPLICATION_STATUS_DOC_VERIFY_COMPLETED.equalsIgnoreCase(application.getStatus().getCode())
                 && NOC_UPDATION_IN_PROGRESS.equalsIgnoreCase(application.getState().getValue())) {
 
             String feeCalculationMode = bpaUtils.getBPAFeeCalculationMode();
@@ -755,32 +771,17 @@ public class ApplicationBpaService extends GenericBillGeneratorService {
         return totalAmount;
     }
 
-    public BigDecimal getTotalFeeAmountByPassingServiceTypeAndAmenities(List<Long> serviceTypeIds) {
+    public BigDecimal getTotalFeeAmountByPassingServiceTypeAndAmenities(BpaApplication application) {
         BigDecimal totalAmount = BigDecimal.ZERO;
-        String feeType;
-        for (Long serviceTypeId : serviceTypeIds) {
-            String serviceType = serviceTypeService.findById(serviceTypeId).getDescription();
-            if (serviceType.equals(WELL))
-                feeType = APPLICATION_FEES_FOR_WELL_CONSTURCTION;
-            else if (serviceType.equals(BpaConstants.AMENITIES))
-                feeType = APPLICATION_FEES_FOR_AMENITIES;
-            else if (serviceType.equals(COMPOUND_WALL))
-                feeType = APPLICATION_FEES_FOR_COMPOUND_WALL;
-            else if (serviceType.equals(ROOF_CONVERSION))
-                feeType = APPLICATION_FEES_FOR_ROOF_CONVERSION;
-            else if (serviceType.equals(SHUTTER_DOOR_CONVERSION))
-                feeType = APPLICATION_FEES_FOR_SHUTTER_OR_DOOR_CONVERSION;
-            else
-                feeType = BpaConstants.BPA_APP_FEE;
-
-            final Criteria feeCrit = applicationBpaBillService.getBpaFeeCriteria(serviceTypeIds, feeType,
-                    FeeSubType.APPLICATION_FEE);
-            @SuppressWarnings(UNCHECKED)
-            final List<BpaFeeMapping> bpaFeeMap = feeCrit.list();
-            for (final BpaFeeMapping feeMap : bpaFeeMap)
-                totalAmount = totalAmount.add(BigDecimal.valueOf(feeMap.getAmount()));
-        }
-
+        if (application != null) {	    		
+    		Plan plan = getPlanInfo(application.geteDcrNumber());	    		
+    		if(null!=plan) {
+    			OccupancyTypeHelper mostRestrictiveFarHelper = plan.getVirtualBuilding() != null
+						? plan.getVirtualBuilding().getMostRestrictiveFarHelper()
+						: null;
+						totalAmount.add(permitFeeCalculationService.getTotalSecurityFee(plan, mostRestrictiveFarHelper));
+    		}
+    	}
         return totalAmount;
     }
 
@@ -1175,7 +1176,7 @@ public class ApplicationBpaService extends GenericBillGeneratorService {
         citizen.addAddress(address);
         citizen.updateNextPwdExpiryDate(environmentSettings.userPasswordExpiryInDays());
         citizen.setAadhaarNumber(owner.getAadhaarNumber());
-        citizen.setTenantId(ApplicationConstant.STATE_TENANTID);
+        citizen.setTenantId(ApplicationConstant.CHANDIGARH_TENANTID);
         citizen.setActive(true);
         citizen.addRole(roleService.getRoleByName(ROLE_CITIZEN));
         return citizen;

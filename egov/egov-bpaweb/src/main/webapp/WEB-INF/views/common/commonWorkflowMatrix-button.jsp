@@ -97,11 +97,31 @@
 		<tr>
 			<td><c:forEach items="${validActionList}" var="validButtons">
 					<c:if test="${validButtons ne ''}">
-						<form:button type="submit" id="${validButtons}"
-							class="btn workAction btn-primary" value="${validButtons}"
-							onclick="validateWorkFlowApprover('${validButtons}');">
-							<c:out value="${validButtons}" />
-						</form:button>
+						<c:choose>
+							<c:when test="${validButtons eq 'Forward'}">
+								<c:if test="${(nextAction eq 'Forwarded to check NOC updation') and isAllNOCApproved}">
+									<form:button type="submit" id="${validButtons}"
+										class="btn workAction btn-primary" value="${validButtons}"
+										onclick="validateWorkFlowApprover('${validButtons}');">
+										<c:out value="${validButtons}" />
+									</form:button>
+								</c:if>
+								<c:if test="${nextAction ne 'Forwarded to check NOC updation'}">
+									<form:button type="submit" id="${validButtons}"
+										class="btn workAction btn-primary" value="${validButtons}"
+										onclick="validateWorkFlowApprover('${validButtons}');">
+										<c:out value="${validButtons}" />
+									</form:button>
+								</c:if>
+							</c:when>
+							<c:otherwise>
+								<form:button type="submit" id="${validButtons}"
+									class="btn workAction btn-primary" value="${validButtons}"
+									onclick="validateWorkFlowApprover('${validButtons}');">
+									<c:out value="${validButtons}" />
+								</form:button>
+							</c:otherwise>
+						</c:choose>
 					</c:if>
 				</c:forEach> <input type="button" name="button2" id="button2" value="Close"
 				class="btn btn-default" onclick="window.close();" /></td>

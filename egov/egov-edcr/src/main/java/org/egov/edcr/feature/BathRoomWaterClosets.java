@@ -61,6 +61,8 @@ import org.egov.common.entity.edcr.Plan;
 import org.egov.common.entity.edcr.Result;
 import org.egov.common.entity.edcr.RoomHeight;
 import org.egov.common.entity.edcr.ScrutinyDetail;
+import org.egov.edcr.service.cdg.CDGAConstant;
+import org.egov.edcr.service.cdg.CDGAdditionalService;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -68,7 +70,7 @@ public class BathRoomWaterClosets extends FeatureProcess {
 
 	private static final Logger LOG = Logger.getLogger(BathRoomWaterClosets.class);
 	private static final String RULE_41_IV = "41-iv";
-	public static final String BathroomWaterClosets_DESCRIPTION = "Bathroom Water Closets";
+	public static final String BathroomWaterClosets_DESCRIPTION = "Toilet";
 
 	@Override
 	public Plan validate(Plan pl) {
@@ -80,7 +82,7 @@ public class BathRoomWaterClosets extends FeatureProcess {
 	public Plan process(Plan pl) {
 
 		ScrutinyDetail scrutinyDetail = new ScrutinyDetail();
-		scrutinyDetail.setKey("Common_Bathroom Water Closets");
+		scrutinyDetail.setKey("Common_Toilet");
 		scrutinyDetail.addColumnHeading(1, RULE_NO);
 		scrutinyDetail.addColumnHeading(2, DESCRIPTION);
 		scrutinyDetail.addColumnHeading(3, REQUIRED);
@@ -88,7 +90,8 @@ public class BathRoomWaterClosets extends FeatureProcess {
 		scrutinyDetail.addColumnHeading(5, STATUS);
 
 		Map<String, String> details = new HashMap<>();
-		details.put(RULE_NO, RULE_41_IV);
+		//details.put(RULE_NO, RULE_41_IV);
+		details.put(RULE_NO, CDGAdditionalService.getByLaws(pl, CDGAConstant.BATH));
 		details.put(DESCRIPTION, BathroomWaterClosets_DESCRIPTION);
 
 		BigDecimal minHeight = BigDecimal.ZERO, totalArea = BigDecimal.ZERO, minWidth = BigDecimal.ZERO;

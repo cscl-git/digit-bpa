@@ -134,7 +134,7 @@
 					<!-- logo -->
 					<div class="navbar-brand">
 						<a href="javascript:void(0);">
-							<img src="/egi/downloadfile/logo" height="67"  class="rounded">
+							<img src="/egi/downloadfile/logo" class="rounded" style="height: 60px;">
 						</a>
 					</div>   
 					
@@ -217,8 +217,8 @@
 						</li>
 						
 						<li class="dropdown">
-							<a href="http://www.egovernments.org" target="_blank">
-								<img src="<c:url value='/resources/global/images/digit-logo-black.png' context='/egi'/>" title="Powered by eGovernments" height="35px" style="opacity: 0.8">
+							<a href="javascript:void(0);" target="_blank">
+								<img src="<c:url value='/resources/global/images/digit-logo-black.png' context='/egi'/>" title="" height="35px" style="opacity: 0.8">
 							</a>
 						</li>
 					</ul>
@@ -322,7 +322,7 @@
 				</div>
 				
 			</div>
-			<footer class="clearfix simple">
+			<%-- <footer class="clearfix simple">
 				<div class="constrain">
 					<div id="legal">
 						<c:set var="now" value="<%=new org.joda.time.DateTime()%>" />
@@ -330,7 +330,7 @@
 						<span class="version">eGov ERP - ${app_version}_${app_buildno}<c:if test="${not empty app_core_build_no}"> @ Core - ${app_core_build_no}</c:if></span>
 					</div>
 				</div>
-			</footer>	
+			</footer> --%>	
 		</div>
 		
 		<!--feedback -->

@@ -51,7 +51,8 @@ import static org.egov.bpa.utils.BpaConstants.APPLICATION_STATUS_APPROVED;
 import static org.egov.bpa.utils.BpaConstants.APPLICATION_STATUS_CANCELLED;
 import static org.egov.bpa.utils.BpaConstants.APPLICATION_STATUS_DIGI_SIGNED;
 import static org.egov.bpa.utils.BpaConstants.APPLICATION_STATUS_DOC_VERIFIED;
-import static org.egov.bpa.utils.BpaConstants.APPLICATION_STATUS_FIELD_INS;
+import static org.egov.bpa.utils.BpaConstants.APPLICATION_STATUS_DOC_VERIFY_COMPLETED;
+import static org.egov.bpa.utils.BpaConstants.APPLICATION_STATUS_APPROVAL_PROCESS_INITIATED;
 import static org.egov.bpa.utils.BpaConstants.APPLICATION_STATUS_NOCUPDATED;
 import static org.egov.bpa.utils.BpaConstants.APPLICATION_STATUS_PENDING_FOR_RESCHEDULING;
 import static org.egov.bpa.utils.BpaConstants.APPLICATION_STATUS_RECORD_APPROVED;
@@ -69,10 +70,8 @@ import static org.egov.bpa.utils.BpaConstants.FIELD_INSPECTION_COMPLETED;
 import static org.egov.bpa.utils.BpaConstants.FORWARDED_TO_CLERK;
 import static org.egov.bpa.utils.BpaConstants.FORWARDED_TO_NOC_UPDATE;
 import static org.egov.bpa.utils.BpaConstants.FWDINGTOLPINITIATORPENDING;
-import static org.egov.bpa.utils.BpaConstants.FWD_TO_AE_AFTER_TS_INSP;
 import static org.egov.bpa.utils.BpaConstants.FWD_TO_AE_FOR_APPROVAL;
 import static org.egov.bpa.utils.BpaConstants.FWD_TO_AE_FOR_FIELD_ISPECTION;
-import static org.egov.bpa.utils.BpaConstants.FWD_TO_OVERSEER_AFTER_TS_INSPN;
 import static org.egov.bpa.utils.BpaConstants.FWD_TO_OVRSR_FOR_FIELD_INS;
 import static org.egov.bpa.utils.BpaConstants.GENERATEPERMITORDER;
 import static org.egov.bpa.utils.BpaConstants.GENERATEREJECTNOTICE;
@@ -93,6 +92,18 @@ import static org.egov.bpa.utils.BpaConstants.WF_REVERT_BUTTON;
 import static org.egov.bpa.utils.BpaConstants.WF_SAVE_BUTTON;
 import static org.egov.bpa.utils.BpaConstants.WF_TS_APPROVAL_PENDING;
 import static org.egov.bpa.utils.BpaConstants.WF_TS_INSPECTION_INITIATED;
+import static org.egov.bpa.utils.BpaConstants.WF_FORWARD_BUTTON;
+import static org.egov.bpa.utils.BpaConstants.WF_BA_VARIFICATION_INITIATED;
+import static org.egov.bpa.utils.BpaConstants.APPROVED;
+import static org.egov.bpa.utils.BpaConstants.WF_BA_CHECK_NOC_UPDATION;
+import static org.egov.bpa.utils.BpaConstants.WF_PERMIT_FEE_COLL_PENDING;
+import static org.egov.bpa.utils.BpaConstants.WF_BA_AE_APPROVAL;
+import static org.egov.bpa.utils.BpaConstants.WF_BA_SDO_APPROVAL;
+import static org.egov.bpa.utils.BpaConstants.REJECTION_INITIATED;
+import static org.egov.bpa.utils.BpaConstants.WF_BA_NOC_UPDATION_IN_PROGRESS;
+import static org.egov.bpa.utils.BpaConstants.WF_BA_FINAL_APPROVAL_PROCESS_INITIATED;
+import static org.egov.bpa.utils.BpaConstants.WF_BA_AEE_APPLICATION_APPROVAL_PENDING;
+import static org.egov.bpa.utils.BpaConstants.WF_BA_FORWARD_TO_SDO_BUILDING;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -359,8 +370,7 @@ public class UpdateBpaApplicationController extends BpaGenericApplicationControl
             final HttpServletRequest request,
             final Model model,
             final RedirectAttributes redirectAttributes,
-            @RequestParam final BigDecimal amountRule) throws IOException {
-
+            @RequestParam final BigDecimal amountRule) throws IOException {    	
         String workFlowAction = request.getParameter(WORK_FLOW_ACTION);
         String approvalComent = request.getParameter(APPROVAL_COMENT);
 
@@ -418,6 +428,17 @@ public class UpdateBpaApplicationController extends BpaGenericApplicationControl
         String message;
         Long approvalPosition = null;
         Position pos = null;
+        
+        if (WF_FORWARD_BUTTON.equalsIgnoreCase(workFlowAction) && 
+        		WF_BA_VARIFICATION_INITIATED.equalsIgnoreCase(bpaApplication.getState().getNextAction())) {
+        	List<PermitNocApplication> permitNocApplied = permitNocService.findByPermitApplicationNumber(bpaApplication.getApplicationNumber());
+            if (permitNocApplied.isEmpty()) {
+    	    	boolean isEdcrIntegrationRequire = bpaDcrService.isEdcrIntegrationRequireByService(bpaApplication.getServiceType().getCode());
+    	    	if (isEdcrIntegrationRequire)
+    	            permitNocService.initiateNoc(bpaApplication);
+            }
+        }
+        
         if (WF_TS_INSPECTION_INITIATED.equalsIgnoreCase(bpaApplication.getStatus().getCode())) {
             pos = positionMasterService.getPositionById(bpaWorkFlowService
                     .getTownSurveyorInspnInitiator(bpaApplication.getStateHistory(), bpaApplication.getCurrentState()));
@@ -617,7 +638,8 @@ public class UpdateBpaApplicationController extends BpaGenericApplicationControl
             mode = "modifyInspection";
             scheduleType = AppointmentSchedulePurpose.INSPECTION;
         } else if (FORWARDED_TO_NOC_UPDATE.equalsIgnoreCase(pendingAction)
-                && APPLICATION_STATUS_FIELD_INS.equalsIgnoreCase(currentStatus)) {
+                && APPLICATION_STATUS_DOC_VERIFY_COMPLETED.equalsIgnoreCase(currentStatus)
+                && !application.getApplicationType().getName().equals(LOWRISK)) {
             model.addAttribute("showUpdateNoc", true);
             nocStatusService.updateNocStatus(application);
         } else if (FWD_TO_AE_FOR_APPROVAL.equalsIgnoreCase(pendingAction)
@@ -642,7 +664,7 @@ public class UpdateBpaApplicationController extends BpaGenericApplicationControl
         if (!application.getIsOneDayPermitApplication() && !application.getPermitInspections().isEmpty()
                 && ((hasInspectionStatus && hasInspectionPendingAction)
                         || (FIELD_INSPECTION_COMPLETED.equalsIgnoreCase(currentStateValue)
-                                && APPLICATION_STATUS_FIELD_INS.equalsIgnoreCase(currentStatus))))
+                                && APPLICATION_STATUS_DOC_VERIFY_COMPLETED.equalsIgnoreCase(currentStatus))))
             model.addAttribute("isTSInspectionRequired", false);
 
         if (mode == null)
@@ -705,33 +727,10 @@ public class UpdateBpaApplicationController extends BpaGenericApplicationControl
                     && APPLICATION_STATUS_APPROVED.equals(application.getStatus().getCode())
                     && !APPLICATION_STATUS_RECORD_APPROVED.equalsIgnoreCase(application.getState().getValue())) {
                 workflowContainer.setAmountRule(bpaWorkFlowService.getAmountRuleByServiceType(application));
-            }
-            // Town surveyor workflow
-            if (WF_TS_INSPECTION_INITIATED.equalsIgnoreCase(application.getStatus().getCode())) {
-                workflowContainer.setPendingActions(WF_TS_APPROVAL_PENDING);
-                model.addAttribute("captureTSRemarks", true);
-            } else if (APPLICATION_STATUS_TS_INS.equalsIgnoreCase(application.getStatus().getCode())) {
-                Assignment approverAssignment = bpaWorkFlowService
-                        .getApproverAssignment(application.getCurrentState().getOwnerPosition());
-                if (application.getCurrentState().getOwnerUser() != null) {
-                    List<Assignment> assignments = bpaWorkFlowService.getAssignmentByPositionAndUserAsOnDate(
-                            application.getCurrentState().getOwnerPosition().getId(),
-                            application.getCurrentState().getOwnerUser().getId(),
-                            application.getCurrentState().getLastModifiedDate());
-                    if (!assignments.isEmpty())
-                        approverAssignment = assignments.get(0);
-                }
-                if (approverAssignment == null)
-                    approverAssignment = bpaWorkFlowService
-                            .getAssignmentsByPositionAndDate(application.getCurrentState().getOwnerPosition().getId(), new Date())
-                            .get(0);
-                if (DESIGNATION_AE.equals(approverAssignment.getDesignation().getName())) {
-                    workflowContainer.setPendingActions(FWD_TO_AE_AFTER_TS_INSP);
-                } else if (DESIGNATION_OVERSEER.equals(approverAssignment.getDesignation().getName())) {
-                    workflowContainer.setPendingActions(FWD_TO_OVERSEER_AFTER_TS_INSPN);
-                }
-                model.addAttribute("captureTSRemarks", false);
-            }
+            }            
+        }
+        if (application.getState() != null && application.getState().getValue().equalsIgnoreCase(REJECTION_INITIATED)) {
+            workflowContainer.setPendingActions(application.getState().getNextAction());
         }
         prepareWorkflow(model, application, workflowContainer);
         model.addAttribute("pendingActions", workflowContainer.getPendingActions());
@@ -774,21 +773,42 @@ public class UpdateBpaApplicationController extends BpaGenericApplicationControl
 
         prepareActions(model, application);
         model.addAttribute("nocInitiated", false);
-
-        /*
-         * List<BpaNocApplication> nocApplication = nocService.findByApplicationNumber(application.getApplicationNumber());
-         * List<String> nocStatus = nocApplication.stream().map(noc -> noc.getStatus().getCode()).collect(Collectors.toList());
-         * if(!application.getApplicationType().getName().equals(BpaConstants.LOWRISK) && actions.contains(WF_APPROVE_BUTTON)) {
-         * if(nocStatus.contains(BpaConstants.NOC_REJECTED)) model.addAttribute("validActionList", Arrays.asList("Reject")); else
-         * if(nocStatus.contains(BpaConstants.NOC_INITIATED)) model.addAttribute("nocInitiated",true); }
-         */
-
+        
+        boolean isAllNOCApproved = false;
+        String nextAction="";
+        if (WF_BA_CHECK_NOC_UPDATION.equalsIgnoreCase(application.getState().getNextAction())) {
+        	nextAction=WF_BA_CHECK_NOC_UPDATION;
+        	List<PermitNocApplication> permitNocApplied = permitNocService.findByPermitApplicationNumber(application.getApplicationNumber());
+            if (!permitNocApplied.isEmpty()) {
+            	int nocApplicationCount = permitNocApplied.size();
+            	int nocApprovedCount = 0;
+    	    	for(PermitNocApplication nocApplication:permitNocApplied) {
+    	    		if(APPROVED.equalsIgnoreCase(nocApplication.getBpaNocApplication().getStatus().getCode())) {
+    	    			nocApprovedCount++;
+    	    		}
+    	    	}    	    	
+    	    	if(nocApprovedCount==nocApplicationCount) {
+    	    		isAllNOCApproved=true;    	    		
+    	    	}
+            }else {
+            	isAllNOCApproved = true;
+            }
+        }else {
+        	isAllNOCApproved = true;
+        }
+        model.addAttribute("isAllNOCApproved", isAllNOCApproved);
+        model.addAttribute("nextAction", nextAction);
+        
         if (!application.getIsOneDayPermitApplication()
-                && (FWD_TO_AE_FOR_FIELD_ISPECTION.equals(application.getState().getNextAction())
-                        || APPLICATION_STATUS_FIELD_INS.equals(application.getStatus().getCode())
-                        || APPLICATION_STATUS_NOCUPDATED.equalsIgnoreCase(application.getStatus().getCode()))
-                || (application.getApplicationType().getName().equals(BpaConstants.LOWRISK) &&
-                        FORWARDED_TO_CLERK.equals(application.getState().getNextAction()))) {
+        		&& !application.getApplicationType().getName().equals(BpaConstants.LOWRISK)
+                && (WF_BA_NOC_UPDATION_IN_PROGRESS.equalsIgnoreCase(application.getState().getNextAction())
+                	|| REJECTION_INITIATED.equalsIgnoreCase(application.getState().getNextAction())
+                	|| WF_BA_FINAL_APPROVAL_PROCESS_INITIATED.equalsIgnoreCase(application.getState().getNextAction())
+                	|| WF_BA_AEE_APPLICATION_APPROVAL_PENDING.equalsIgnoreCase(application.getState().getNextAction())
+                	|| WF_BA_FORWARD_TO_SDO_BUILDING.equalsIgnoreCase(application.getState().getNextAction())
+                    || APPLICATION_STATUS_DOC_VERIFY_COMPLETED.equalsIgnoreCase(application.getStatus().getCode())
+                    || APPLICATION_STATUS_APPROVAL_PROCESS_INITIATED.equalsIgnoreCase(application.getStatus().getCode()))
+           ) {
             model.addAttribute("createlettertoparty", true);
         }
 
@@ -827,19 +847,20 @@ public class UpdateBpaApplicationController extends BpaGenericApplicationControl
                     .findByDepartmentAndType(code, BpaConstants.PERMIT);
             if (permitNocService.findByApplicationNumberAndType(application.getApplicationNumber(), code) != null)
                 nocTypeApplMap.put(code, "initiated");
-            if (nocConfig != null && nocConfig.getApplicationType().trim().equalsIgnoreCase(BpaConstants.PERMIT)
-                    && (nocConfig.getIntegrationType().equalsIgnoreCase(NocIntegrationTypeEnum.INTERNAL.toString()) || 
-                    		nocConfig.getIntegrationType().equalsIgnoreCase(NocIntegrationTypeEnum.THIRD_PARTY.toString()))
-                    && nocConfig.getIntegrationInitiation().equalsIgnoreCase(NocIntegrationInitiationEnum.MANUAL.toString()) &&
-                    edcrNocMandatory.get(nocConfig.getDepartment()).equalsIgnoreCase("YES") && nocDocument.getNocDocument().getNocSupportDocs().isEmpty())
-                nocConfigMap.put(nocConfig.getDepartment(), "initiate");
-            if (nocConfig != null && nocConfig.getApplicationType().trim().equalsIgnoreCase(BpaConstants.PERMIT)
-                    && (nocConfig.getIntegrationType().equalsIgnoreCase(NocIntegrationTypeEnum.INTERNAL.toString()) || 
-            		nocConfig.getIntegrationType().equalsIgnoreCase(NocIntegrationTypeEnum.THIRD_PARTY.toString()))
-                    && nocConfig.getIntegrationInitiation().equalsIgnoreCase(NocIntegrationInitiationEnum.AUTO.toString()) &&
-                    edcrNocMandatory.get(nocConfig.getDepartment()).equalsIgnoreCase("YES") && nocDocument.getNocDocument().getNocSupportDocs().isEmpty())
-                nocAutoMap.put(nocConfig.getDepartment(), "autoinitiate");
-
+            if(null != edcrNocMandatory && !edcrNocMandatory.isEmpty()) {
+	            if (nocConfig != null && nocConfig.getApplicationType().trim().equalsIgnoreCase(BpaConstants.PERMIT)
+	                    && (nocConfig.getIntegrationType().equalsIgnoreCase(NocIntegrationTypeEnum.INTERNAL.toString()) || 
+	                    		nocConfig.getIntegrationType().equalsIgnoreCase(NocIntegrationTypeEnum.THIRD_PARTY.toString()))
+	                    && nocConfig.getIntegrationInitiation().equalsIgnoreCase(NocIntegrationInitiationEnum.MANUAL.toString()) &&
+	                    edcrNocMandatory.get(nocConfig.getDepartment()).equalsIgnoreCase("YES") && nocDocument.getNocDocument().getNocSupportDocs().isEmpty())
+	                nocConfigMap.put(nocConfig.getDepartment(), "initiate");
+	            if (nocConfig != null && nocConfig.getApplicationType().trim().equalsIgnoreCase(BpaConstants.PERMIT)
+	                    && (nocConfig.getIntegrationType().equalsIgnoreCase(NocIntegrationTypeEnum.INTERNAL.toString()) || 
+	            		nocConfig.getIntegrationType().equalsIgnoreCase(NocIntegrationTypeEnum.THIRD_PARTY.toString()))
+	                    && nocConfig.getIntegrationInitiation().equalsIgnoreCase(NocIntegrationInitiationEnum.AUTO.toString()) &&
+	                    edcrNocMandatory.get(nocConfig.getDepartment()).equalsIgnoreCase("YES") && nocDocument.getNocDocument().getNocSupportDocs().isEmpty())
+	                nocAutoMap.put(nocConfig.getDepartment(), "autoinitiate");
+            }
             for (PermitNocApplication pna : permitNoc) {
                 if (nocDocument.getNocDocument().getServiceChecklist().getChecklist().getCode()
                         .equalsIgnoreCase(pna.getBpaNocApplication().getNocType())) {
@@ -848,6 +869,7 @@ public class UpdateBpaApplicationController extends BpaGenericApplicationControl
             }
 
         }
+        
         model.addAttribute("nocTypeApplMap", nocTypeApplMap);
         model.addAttribute("nocConfigMap", nocConfigMap);
         model.addAttribute("nocAutoMap", nocAutoMap);
@@ -864,7 +886,7 @@ public class UpdateBpaApplicationController extends BpaGenericApplicationControl
 
     private void buildRejectionReasons(Model model, BpaApplication application) {
         if (application.getIsOneDayPermitApplication()
-                && APPLICATION_STATUS_FIELD_INS.equalsIgnoreCase(application.getStatus().getCode())
+                && APPLICATION_STATUS_DOC_VERIFY_COMPLETED.equalsIgnoreCase(application.getStatus().getCode())
                 || APPLICATION_STATUS_NOCUPDATED.equals(application.getStatus().getCode())
                 || APPLICATION_STATUS_REJECTED.equalsIgnoreCase(application.getStatus().getCode())
                 || APPLICATION_STATUS_SCHEDULED.equalsIgnoreCase(application.getStatus().getCode())
@@ -872,6 +894,63 @@ public class UpdateBpaApplicationController extends BpaGenericApplicationControl
                 || (APPLICATION_STATUS_REGISTERED.equalsIgnoreCase(application.getStatus().getCode())
                         && FORWARDED_TO_CLERK.equalsIgnoreCase(application.getCurrentState().getNextAction()))) {
             model.addAttribute("showRejectionReasons", true);
+
+            List<ChecklistServiceTypeMapping> additionalRejectionReasonList = checklistServiceTypeService
+                    .findByActiveChecklistAndServiceType(application.getServiceType().getDescription(),
+                            "ADDITIONALREJECTIONREASONS");
+
+            List<ChecklistServiceTypeMapping> rejectionReasonList = checklistServiceTypeService
+                    .findByActiveChecklistAndServiceType(
+                            application.getServiceType().getDescription(), "PERMITREJECTIONREASONS");
+
+            List<ApplicationPermitConditions> rejectionApplnPermitConditions = new ArrayList<>();
+            List<ApplicationPermitConditions> rejectionReasons = bpaApplicationPermitConditionsService
+                    .findAllByApplicationAndPermitConditionType(application, ConditionType.REJECTIONREASONS);
+            if (rejectionReasons == null || rejectionReasons.isEmpty()) {
+                for (ChecklistServiceTypeMapping checklistServicetype : rejectionReasonList) {
+                    ApplicationPermitConditions condition = new ApplicationPermitConditions();
+                    NoticeCondition noticeCondtion = new NoticeCondition();
+                    noticeCondtion.setChecklistServicetype(checklistServicetype);
+                    condition.setNoticeCondition(noticeCondtion);
+                    condition.setApplication(application);
+                    rejectionApplnPermitConditions.add(condition);
+                }
+                application.setRejectionReasonsTemp(rejectionApplnPermitConditions);
+            } else {
+                for (ApplicationPermitConditions apc : application.getRejectionReasons()) {
+                    if (apc.getNoticeCondition().getType().name().equals("REJECTIONREASONS"))
+                        rejectionApplnPermitConditions.add(apc);
+                }
+                application.setRejectionReasonsTemp(rejectionApplnPermitConditions);
+            }
+
+            List<ApplicationPermitConditions> additionalRejectionApplnPermitConditions = new ArrayList<>();
+            List<ApplicationPermitConditions> additionalRejectionReasons = bpaApplicationPermitConditionsService
+                    .findAllByApplicationAndPermitConditionType(application, ConditionType.ADDITIONALREJECTIONREASONS);
+            if (additionalRejectionReasons == null || additionalRejectionReasons.isEmpty()) {
+                for (ChecklistServiceTypeMapping checklistServicetype : additionalRejectionReasonList) {
+                    ApplicationPermitConditions condition = new ApplicationPermitConditions();
+                    NoticeCondition noticeCondtion = new NoticeCondition();
+                    noticeCondtion.setChecklistServicetype(checklistServicetype);
+                    condition.setNoticeCondition(noticeCondtion);
+                    condition.setApplication(application);
+                    additionalRejectionApplnPermitConditions.add(condition);
+                }
+                application.setAdditionalRejectReasonsTemp(additionalRejectionApplnPermitConditions);
+            } else {
+                for (ApplicationPermitConditions apc : application.getAdditionalPermitConditions()) {
+                    if (apc.getNoticeCondition().getType().name().equals("ADDITIONALREJECTIONREASONS"))
+                        additionalRejectionApplnPermitConditions.add(apc);
+                }
+                application.setAdditionalRejectReasonsTemp(additionalRejectionApplnPermitConditions);
+            }
+        }
+        
+        if (WF_BA_CHECK_NOC_UPDATION.equals(application.getCurrentState().getNextAction())
+                || WF_PERMIT_FEE_COLL_PENDING.equalsIgnoreCase(application.getCurrentState().getNextAction())
+                	|| WF_BA_AE_APPROVAL.equalsIgnoreCase(application.getCurrentState().getNextAction())
+                		|| WF_BA_SDO_APPROVAL.equalsIgnoreCase(application.getCurrentState().getNextAction())) {
+        	model.addAttribute("showRejectionReasons", true);
 
             List<ChecklistServiceTypeMapping> additionalRejectionReasonList = checklistServiceTypeService
                     .findByActiveChecklistAndServiceType(application.getServiceType().getDescription(),

@@ -55,9 +55,13 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 import org.egov.common.entity.edcr.Block;
+import org.egov.common.entity.edcr.OccupancyTypeHelper;
 import org.egov.common.entity.edcr.Plan;
 import org.egov.common.entity.edcr.Result;
 import org.egov.common.entity.edcr.ScrutinyDetail;
+import org.egov.edcr.constants.DxfFileConstants;
+import org.egov.edcr.service.cdg.CDGAConstant;
+import org.egov.edcr.service.cdg.CDGAdditionalService;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -73,6 +77,45 @@ public class Parapet extends FeatureProcess {
 		return pl;
 	}
 
+	// CGCL start according to 26jan
+
+	/*
+	 * @Override public Plan process(Plan pl) {
+	 * 
+	 * ScrutinyDetail scrutinyDetail = new ScrutinyDetail();
+	 * scrutinyDetail.setKey("Common_Parapet"); scrutinyDetail.addColumnHeading(1,
+	 * RULE_NO); scrutinyDetail.addColumnHeading(2, DESCRIPTION);
+	 * scrutinyDetail.addColumnHeading(3, REQUIRED);
+	 * scrutinyDetail.addColumnHeading(4, PROVIDED);
+	 * scrutinyDetail.addColumnHeading(5, STATUS);
+	 * 
+	 * Map<String, String> details = new HashMap<>(); details.put(RULE_NO,
+	 * RULE_41_V); details.put(DESCRIPTION, PARAPET_DESCRIPTION);
+	 * 
+	 * BigDecimal minHeight = BigDecimal.ZERO;
+	 * 
+	 * for (Block b : pl.getBlocks()) { if (b.getParapets() != null &&
+	 * !b.getParapets().isEmpty()) { minHeight =
+	 * b.getParapets().stream().reduce(BigDecimal::min).get();
+	 * 
+	 * if (minHeight.compareTo(new BigDecimal(1.2)) >= 0 && minHeight.compareTo(new
+	 * BigDecimal(1.5)) <= 0) {
+	 * 
+	 * details.put(REQUIRED, "Height >= 1.2 and height <= 1.5");
+	 * details.put(PROVIDED, "Height >= " + minHeight + " and height <= " +
+	 * minHeight); details.put(STATUS, Result.Accepted.getResultVal());
+	 * scrutinyDetail.getDetail().add(details);
+	 * pl.getReportOutput().getScrutinyDetails().add(scrutinyDetail);
+	 * 
+	 * } else { details.put(REQUIRED, "Height >= 1.2 and height <= 1.5");
+	 * details.put(PROVIDED, "Height >= " + minHeight + " and height <= " +
+	 * minHeight); details.put(STATUS, Result.Not_Accepted.getResultVal());
+	 * scrutinyDetail.getDetail().add(details);
+	 * pl.getReportOutput().getScrutinyDetails().add(scrutinyDetail); } } }
+	 * 
+	 * return pl; }
+	 */
+
 	@Override
 	public Plan process(Plan pl) {
 
@@ -85,35 +128,59 @@ public class Parapet extends FeatureProcess {
 		scrutinyDetail.addColumnHeading(5, STATUS);
 
 		Map<String, String> details = new HashMap<>();
-		details.put(RULE_NO, RULE_41_V);
+		details.put(RULE_NO, CDGAdditionalService.getByLaws(pl, CDGAConstant.PARAPET));
 		details.put(DESCRIPTION, PARAPET_DESCRIPTION);
 
 		BigDecimal minHeight = BigDecimal.ZERO;
+		BigDecimal maxHeight = BigDecimal.ZERO;
 
-		for (Block b : pl.getBlocks()) {
-			if (b.getParapets() != null && !b.getParapets().isEmpty()) {
-				minHeight = b.getParapets().stream().reduce(BigDecimal::min).get();
+		OccupancyTypeHelper mostRestrictiveOccupancy = pl.getVirtualBuilding() != null
+				? pl.getVirtualBuilding().getMostRestrictiveFarHelper()
+				: null;
 
-				if (minHeight.compareTo(new BigDecimal(1.2)) >= 0 && minHeight.compareTo(new BigDecimal(1.5)) <= 0) {
+		if (!isOccupancyTypeNotApplicable(mostRestrictiveOccupancy)) {
+			for (Block b : pl.getBlocks()) {
+				if (b.getParapets() != null && !b.getParapets().isEmpty()) {
+					minHeight = b.getParapets().stream().reduce(BigDecimal::min).get();
+					maxHeight = b.getParapets().stream().reduce(BigDecimal::max).get();
 
-					details.put(REQUIRED, "Height >= 1.2 and height <= 1.5");
-					details.put(PROVIDED, "Height >= " + minHeight + " and height <= " + minHeight);
-					details.put(STATUS, Result.Accepted.getResultVal());
-					scrutinyDetail.getDetail().add(details);
-					pl.getReportOutput().getScrutinyDetails().add(scrutinyDetail);
+					if (minHeight.compareTo(new BigDecimal(1.0)) >= 0
+							&& maxHeight.compareTo(new BigDecimal(1.2)) <= 0) {
+						details.put(REQUIRED, "Height >= 1.0 and height <= 1.2");
+						details.put(PROVIDED, "Height >= " + minHeight + " and height <= " + maxHeight);
+						details.put(STATUS, Result.Accepted.getResultVal());
+						scrutinyDetail.getDetail().add(details);
+						pl.getReportOutput().getScrutinyDetails().add(scrutinyDetail);
 
-				} else {
-					details.put(REQUIRED, "Height >= 1.2 and height <= 1.5");
-					details.put(PROVIDED, "Height >= " + minHeight + " and height <= " + minHeight);
-					details.put(STATUS, Result.Not_Accepted.getResultVal());
-					scrutinyDetail.getDetail().add(details);
-					pl.getReportOutput().getScrutinyDetails().add(scrutinyDetail);
+					} else {
+						details.put(REQUIRED, "Height >= 1.0 and height <= 1.2");
+						details.put(PROVIDED, "Height >= " + minHeight + " and height <= " + maxHeight);
+						details.put(STATUS, Result.Not_Accepted.getResultVal());
+						scrutinyDetail.getDetail().add(details);
+						pl.getReportOutput().getScrutinyDetails().add(scrutinyDetail);
+					}
 				}
 			}
 		}
 
 		return pl;
 	}
+
+	public boolean isOccupancyTypeNotApplicable(OccupancyTypeHelper occupancyTypeHelper) {
+		boolean flage = false;
+
+		if (DxfFileConstants.F_SCO.equals(occupancyTypeHelper.getSubtype().getCode())
+				|| DxfFileConstants.F_B.equals(occupancyTypeHelper.getSubtype().getCode())
+				|| DxfFileConstants.F_PP.equals(occupancyTypeHelper.getSubtype().getCode())
+				|| DxfFileConstants.F_CD.equals(occupancyTypeHelper.getSubtype().getCode())
+				|| DxfFileConstants.R1.equals(occupancyTypeHelper.getSubtype().getCode())
+				|| DxfFileConstants.T1.equals(occupancyTypeHelper.getSubtype().getCode()))
+			flage = true;
+
+		return flage;
+	}
+
+	// CGCL end
 
 	@Override
 	public Map<String, Date> getAmendments() {

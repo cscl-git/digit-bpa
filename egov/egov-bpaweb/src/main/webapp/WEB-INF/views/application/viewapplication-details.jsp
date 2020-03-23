@@ -107,7 +107,7 @@
 				<input type="hidden" id="isOneDayPermitApplication"
 					value="${bpaApplication.applicationType.name}">
 				<c:out
-					value="${bpaApplication.applicationType.name}"
+					value="${bpaApplication.applicationType.description}"
 					default="N/A"></c:out>
 			</div>
 
@@ -271,7 +271,7 @@
 			<spring:message code="lbl.application.type" />
 		</div>
 		<div class="col-sm-3 add-margin view-content text-justify">
-			<c:out value="${bpaApplication.applicationType.name}" default="N/A"></c:out>
+			<c:out value="${bpaApplication.applicationType.description}" default="N/A"></c:out>
 		</div>
 	</div>
 </div>

@@ -143,8 +143,7 @@
 								cssClass="form-control" cssErrorClass="form-control error"
 								required="required">
 						<form:option value=""><spring:message code="lbl.select" /></form:option>
-						<form:options items="${appTypes}" itemValue="id"
-						itemLabel="name" />
+						<form:options items="${appTypes}" itemValue="id" itemLabel="description" />
 					</form:select> 
 					<form:errors path="applicationType"	cssClass="add-margin error-msg" />
 				</div>

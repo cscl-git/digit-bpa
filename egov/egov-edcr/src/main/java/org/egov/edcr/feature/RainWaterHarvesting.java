@@ -58,148 +58,286 @@ import org.egov.common.entity.edcr.Plan;
 import org.egov.common.entity.edcr.Result;
 import org.egov.common.entity.edcr.ScrutinyDetail;
 import org.egov.edcr.constants.DxfFileConstants;
+import org.egov.edcr.service.cdg.CDGAConstant;
+import org.egov.edcr.service.cdg.CDGAdditionalService;
 import org.egov.edcr.utility.DcrConstants;
 import org.springframework.stereotype.Service;
 
 @Service
 public class RainWaterHarvesting extends FeatureProcess {
-    private static final String RULE_51 = "51";
-    /*
-     * private static final String RULE_51_DESCRIPTION = "RainWater Storage Arrangement "; private static final String
-     * RAINWATER_HARVESTING_TANK_CAPACITY = "Minimum capacity of Rain Water Harvesting Tank";
-     */
-    private static final String RULE_51_DESCRIPTION = "Rain Water Harvesting";
-    // private static final String RAINWATER_HARVESTING_TANK_CAPACITY = "Minimum capacity of Rain Water Harvesting Tank";
-    private static final BigDecimal HUNDRED = BigDecimal.valueOf(100);
-    private static final String RWH_DECLARATION_ERROR = DxfFileConstants.RWH_DECLARED
-            + " in PLAN_INFO layer must be declared as YES for plot area greater than 100 sqm.";
+	private static final String RULE_51 = "51";
+	/*
+	 * private static final String RULE_51_DESCRIPTION =
+	 * "RainWater Storage Arrangement "; private static final String
+	 * RAINWATER_HARVESTING_TANK_CAPACITY =
+	 * "Minimum capacity of Rain Water Harvesting Tank";
+	 */
+	private static final String RULE_51_DESCRIPTION = "Rain Water Harvesting";
+	// private static final String RAINWATER_HARVESTING_TANK_CAPACITY = "Minimum
+	// capacity of Rain Water Harvesting Tank";
+	private static final BigDecimal HUNDRED = BigDecimal.valueOf(100);
+	private static final String RWH_DECLARATION_ERROR = DxfFileConstants.RWH_DECLARED
+			+ " in PLAN_INFO layer must be declared as YES for plot area greater than 100 sqm.";
 
-    @Override
-    public Plan validate(Plan pl) {
-        return pl;
-    }
+	@Override
+	public Plan validate(Plan pl) {
+		return pl;
+	}
 
-    @Override
-    public Plan process(Plan pl) {
-        HashMap<String, String> errors = new HashMap<>();
+	// CGCL start according to 26jan
 
-        scrutinyDetail = new ScrutinyDetail();
-        scrutinyDetail.addColumnHeading(1, RULE_NO);
-        scrutinyDetail.addColumnHeading(2, DESCRIPTION);
-        // scrutinyDetail.addColumnHeading(3, REQUIRED);
-        scrutinyDetail.addColumnHeading(4, PROVIDED);
-        scrutinyDetail.addColumnHeading(5, STATUS);
-        scrutinyDetail.setKey("Common_Rain Water Harvesting");
-        String subRule = RULE_51;
-        String subRuleDesc = RULE_51_DESCRIPTION;
-        // BigDecimal expectedTankCapacity = BigDecimal.ZERO;
-        BigDecimal plotArea = pl.getPlot() != null ? pl.getPlot().getArea() : BigDecimal.ZERO;
-        OccupancyTypeHelper mostRestrictiveFarHelper = pl.getVirtualBuilding() != null
-                ? pl.getVirtualBuilding().getMostRestrictiveFarHelper()
-                : null;
+	/*
+	 * @Override public Plan process(Plan pl) { HashMap<String, String> errors = new
+	 * HashMap<>();
+	 * 
+	 * scrutinyDetail = new ScrutinyDetail(); scrutinyDetail.addColumnHeading(1,
+	 * RULE_NO); scrutinyDetail.addColumnHeading(2, DESCRIPTION); //
+	 * scrutinyDetail.addColumnHeading(3, REQUIRED);
+	 * scrutinyDetail.addColumnHeading(4, PROVIDED);
+	 * scrutinyDetail.addColumnHeading(5, STATUS);
+	 * scrutinyDetail.setKey("Common_Rain Water Harvesting"); String subRule =
+	 * RULE_51; String subRuleDesc = RULE_51_DESCRIPTION; // BigDecimal
+	 * expectedTankCapacity = BigDecimal.ZERO; BigDecimal plotArea = pl.getPlot() !=
+	 * null ? pl.getPlot().getArea() : BigDecimal.ZERO; OccupancyTypeHelper
+	 * mostRestrictiveFarHelper = pl.getVirtualBuilding() != null ?
+	 * pl.getVirtualBuilding().getMostRestrictiveFarHelper() : null;
+	 * 
+	 * if (mostRestrictiveFarHelper != null && mostRestrictiveFarHelper.getType() !=
+	 * null) { if
+	 * (DxfFileConstants.A.equalsIgnoreCase(mostRestrictiveFarHelper.getType().
+	 * getCode()) && plotArea.compareTo(HUNDRED) >= 0) { addOutput(pl, errors,
+	 * subRule, subRuleDesc); } else if
+	 * (DxfFileConstants.F.equalsIgnoreCase(mostRestrictiveFarHelper.getType().
+	 * getCode())) { addOutput(pl, errors, subRule, subRuleDesc); } }
+	 * 
+	 * 
+	 * if (plotArea.compareTo(HUNDRED) >= 0) { validateRWH(pl, errors); if
+	 * (pl.getUtility() != null && !pl.getUtility().getRainWaterHarvest().isEmpty()
+	 * && pl.getUtility().getRainWaterHarvestingTankCapacity() != null) { Boolean
+	 * valid = false; BigDecimal roundOffPlotArea = plotArea.divide(HUNDRED);
+	 * expectedTankCapacity = BigDecimal.valueOf(55000)
+	 * .multiply(roundOffPlotArea.setScale(0, BigDecimal.ROUND_HALF_UP)); if
+	 * (pl.getUtility().getRainWaterHarvestingTankCapacity().compareTo(
+	 * expectedTankCapacity) >= 0) { valid = true; } processRWHTankCapacity(pl, "",
+	 * subRule, subRuleDesc, expectedTankCapacity, valid); } }
+	 * 
+	 * return pl; }
+	 */
 
-        if (mostRestrictiveFarHelper != null && mostRestrictiveFarHelper.getType() != null) {
-            if (DxfFileConstants.A.equalsIgnoreCase(mostRestrictiveFarHelper.getType().getCode()) &&
-                    plotArea.compareTo(HUNDRED) >= 0) {
-                addOutput(pl, errors, subRule, subRuleDesc);
-            } else if (DxfFileConstants.F.equalsIgnoreCase(mostRestrictiveFarHelper.getType().getCode())) {
-                addOutput(pl, errors, subRule, subRuleDesc);
-            } else if (DxfFileConstants.G.equalsIgnoreCase(mostRestrictiveFarHelper.getType().getCode())) {
-                addOutput(pl, errors, subRule, subRuleDesc);
-            }    
-        }
+	@Override
+	public Plan process(Plan pl) {
+		HashMap<String, String> errors = new HashMap<>();
 
-        /*
-         * if (plotArea.compareTo(HUNDRED) >= 0) { validateRWH(pl, errors); if (pl.getUtility() != null &&
-         * !pl.getUtility().getRainWaterHarvest().isEmpty() && pl.getUtility().getRainWaterHarvestingTankCapacity() != null) {
-         * Boolean valid = false; BigDecimal roundOffPlotArea = plotArea.divide(HUNDRED); expectedTankCapacity =
-         * BigDecimal.valueOf(55000) .multiply(roundOffPlotArea.setScale(0, BigDecimal.ROUND_HALF_UP)); if
-         * (pl.getUtility().getRainWaterHarvestingTankCapacity().compareTo(expectedTankCapacity) >= 0) { valid = true; }
-         * processRWHTankCapacity(pl, "", subRule, subRuleDesc, expectedTankCapacity, valid); } }
-         */
-        return pl;
-    }
+		scrutinyDetail = new ScrutinyDetail();
+		scrutinyDetail.addColumnHeading(1, RULE_NO);
+		scrutinyDetail.addColumnHeading(2, DESCRIPTION);
+		scrutinyDetail.addColumnHeading(3, REQUIRED);
+		scrutinyDetail.addColumnHeading(4, PROVIDED);
+		scrutinyDetail.addColumnHeading(5, STATUS);
+		scrutinyDetail.setKey("Common_Rain Water Harvesting");
+		String subRule = CDGAdditionalService.getByLaws(pl, CDGAConstant.RAIN_WATER_HERVESTING);
+		String subRuleDesc = RULE_51_DESCRIPTION;
+		BigDecimal expectedTankCapacity = new BigDecimal(100);// default added bcz there are not maintaion in rule
+		BigDecimal plotArea = pl.getPlot() != null ? pl.getPlot().getArea() : BigDecimal.ZERO;
+		OccupancyTypeHelper mostRestrictiveFarHelper = pl.getVirtualBuilding() != null
+				? pl.getVirtualBuilding().getMostRestrictiveFarHelper()
+				: null;
+				
+		if(isOccupancyTypeNotApplicable(mostRestrictiveFarHelper))
+			return pl;
 
-    private void addOutput(Plan pl, HashMap<String, String> errors, String subRule, String subRuleDesc) {
-        if (pl.getPlanInformation() != null &&  pl.getPlanInformation().getRwhDeclared()!= null) {
-            if (pl.getPlanInformation().getRwhDeclared().equalsIgnoreCase(DcrConstants.NO)
-                    || pl.getPlanInformation().getRwhDeclared().equalsIgnoreCase(DcrConstants.NA)) {
-                errors.put(DxfFileConstants.RWH_DECLARED, RWH_DECLARATION_ERROR);
-                pl.addErrors(errors);
-                addReportOutput(pl, subRule, subRuleDesc);
-            } else {
-                addReportOutput(pl, subRule, subRuleDesc);
-            }
-        }
-    }
+		String plotAreaType = pl.getPlanInfoProperties().get(DxfFileConstants.PLOT_TYPE);
 
-    private void addReportOutput(Plan pl, String subRule, String subRuleDesc) {
-        if (pl.getUtility() != null) {
-            if (pl.getUtility().getRainWaterHarvest() != null && !pl.getUtility().getRainWaterHarvest().isEmpty()) {
-                setReportOutputDetails(pl, subRule, subRuleDesc, null,
-                        "Defined in the plan",
-                        Result.Verify.getResultVal());
-            } else {
-                setReportOutputDetails(pl, subRule, subRuleDesc, null,
-                        "Not Defined in the plan",
-                        Result.Not_Accepted.getResultVal());
-            }
-        }
-    }
+		if (mostRestrictiveFarHelper != null && mostRestrictiveFarHelper.getType() != null && plotArea != null) {
+			if (DxfFileConstants.A_P.equals(mostRestrictiveFarHelper.getSubtype().getCode())) {
 
-    
-    /*
-     * private void processRWHTankCapacity(Plan plan, String rule, String subRule, String subRuleDesc, BigDecimal
-     * expectedTankCapacity, Boolean valid) { if (expectedTankCapacity.compareTo(BigDecimal.valueOf(0)) > 0) { if (valid) {
-     * setReportOutputDetails(plan, subRule, RAINWATER_HARVESTING_TANK_CAPACITY, expectedTankCapacity.toString(),
-     * plan.getUtility().getRainWaterHarvestingTankCapacity().toString(), Result.Accepted.getResultVal()); } else {
-     * setReportOutputDetails(plan, subRule, RAINWATER_HARVESTING_TANK_CAPACITY, expectedTankCapacity.toString() + IN_LITRE,
-     * plan.getUtility().getRainWaterHarvestingTankCapacity().toString() + IN_LITRE, Result.Not_Accepted.getResultVal()); } } }
-     */
-     
+				if (plotAreaType.equals(DxfFileConstants.MARLA)) {
 
-    
-    /*
-     * private boolean processRWH(Plan plan, String rule, String subRule, String subRuleDesc) { if
-     * (!plan.getUtility().getRainWaterHarvest().isEmpty()) { setReportOutputDetails(plan, subRule, subRuleDesc, "",
-     * OBJECTDEFINED_DESC, Result.Accepted.getResultVal()); return true; } else if
-     * (plan.getUtility().getRainWaterHarvest().isEmpty()) { setReportOutputDetails(plan, subRule, subRuleDesc, "",
-     * OBJECTNOTDEFINED_DESC, Result.Not_Accepted.getResultVal()); return true; } return false; } private boolean
-     * checkOccupancyTypeForRWH(OccupancyType occupancyType) { return occupancyType.equals(OccupancyType.OCCUPANCY_A2) ||
-     * occupancyType.equals(OccupancyType.OCCUPANCY_A3) || occupancyType.equals(OccupancyType.OCCUPANCY_B1) ||
-     * occupancyType.equals(OccupancyType.OCCUPANCY_B2) || occupancyType.equals(OccupancyType.OCCUPANCY_B3) ||
-     * occupancyType.equals(OccupancyType.OCCUPANCY_C) || occupancyType.equals(OccupancyType.OCCUPANCY_C1) ||
-     * occupancyType.equals(OccupancyType.OCCUPANCY_C2) || occupancyType.equals(OccupancyType.OCCUPANCY_C3) ||
-     * occupancyType.equals(OccupancyType.OCCUPANCY_D) || occupancyType.equals(OccupancyType.OCCUPANCY_D1) ||
-     * occupancyType.equals(OccupancyType.OCCUPANCY_D2) || occupancyType.equals(OccupancyType.OCCUPANCY_E) ||
-     * occupancyType.equals(OccupancyType.OCCUPANCY_G1) || occupancyType.equals(OccupancyType.OCCUPANCY_G2) ||
-     * occupancyType.equals(OccupancyType.OCCUPANCY_I1) || occupancyType.equals(OccupancyType.OCCUPANCY_I2); }
-     */
-     
+					if (pl.getUtility().getRainWaterHarvestingTankCapacity() != null) {
+						setReportOutputDetails(pl, subRule, subRuleDesc, " optional",
+								pl.getUtility().getRainWaterHarvestingTankCapacity() + " litters",
+								Result.Verify.getResultVal());
+					} else {
+						setReportOutputDetails(pl, subRule, subRuleDesc, "optional", "not Defined in the plan",
+								Result.Verify.getResultVal());
+					}
 
-    private void setReportOutputDetails(Plan pl, String ruleNo, String ruleDesc, String expected, String actual,
-            String status) {
-        Map<String, String> details = new HashMap<>();
-        details.put(RULE_NO, ruleNo);
-        details.put(DESCRIPTION, ruleDesc);
-        // details.put(REQUIRED, expected);
-        details.put(PROVIDED, actual);
-        details.put(STATUS, status);
-        scrutinyDetail.getDetail().add(details);
-        pl.getReportOutput().getScrutinyDetails().add(scrutinyDetail);
-    }
+				} else {
+					if (pl.getUtility().getRainWaterHarvestingTankCapacity().compareTo(expectedTankCapacity) > 0)
+						setReportOutputDetails(pl, subRule, subRuleDesc, "Mandatory",
+								pl.getUtility().getRainWaterHarvestingTankCapacity() + " litters",
+								Result.Verify.getResultVal());
+					else
+						setReportOutputDetails(pl, subRule, subRuleDesc, "Mandatory", "Not Defined in the plan",
+								Result.Not_Accepted.getResultVal());
+				}
 
-    /*
-     * private boolean validateRWH(Plan pl, HashMap<String, String> errors) { if (pl.getUtility().getRainWaterHarvest().isEmpty())
-     * { errors.put(RAINWATER_HARVESTING, edcrMessageSource.getMessage(OBJECTNOTDEFINED, new String[] { RAINWATER_HARVESTING },
-     * LocaleContextHolder.getLocale())); pl.addErrors(errors); return true; } else if
-     * (!pl.getUtility().getRainWaterHarvest().isEmpty() && pl.getUtility().getRainWaterHarvestingTankCapacity() == null) {
-     * errors.put(RAINWATER_HARVES_TANKCAPACITY, edcrMessageSource.getMessage(OBJECTNOTDEFINED, new String[] {
-     * RAINWATER_HARVES_TANKCAPACITY }, LocaleContextHolder.getLocale())); pl.addErrors(errors); return true; } return false; }
-     */
+			} else if (!isOccupancyTypeNotApplicable(mostRestrictiveFarHelper)) {
+				
+				if(DxfFileConstants.G.equals(mostRestrictiveFarHelper.getType().getCode()) && (plotAreaType.equals(DxfFileConstants.MARLA) || plotAreaType.equals(DxfFileConstants.ONE_KANAL)) ) {
+					if (pl.getUtility().getRainWaterHarvestingTankCapacity() != null) {
+						setReportOutputDetails(pl, subRule, subRuleDesc, " optional",
+								pl.getUtility().getRainWaterHarvestingTankCapacity() + " litters",
+								Result.Verify.getResultVal());
+					} else {
+						setReportOutputDetails(pl, subRule, subRuleDesc, "optional", "not Defined in the plan",
+								Result.Verify.getResultVal());
+					}
+				}
+				else if (pl.getUtility().getRainWaterHarvestingTankCapacity() !=null && (pl.getUtility().getRainWaterHarvestingTankCapacity().compareTo(expectedTankCapacity) > 0))
+					setReportOutputDetails(pl, subRule, subRuleDesc, "Mandatory",
+							pl.getUtility().getRainWaterHarvestingTankCapacity() + " litters",
+							Result.Verify.getResultVal());
+				else
+					setReportOutputDetails(pl, subRule, subRuleDesc, "Mandatory", "Not Defined in the plan",
+							Result.Not_Accepted.getResultVal());
+			}
 
-    @Override
-    public Map<String, Date> getAmendments() {
-        return new LinkedHashMap<>();
-    }
+		}
+
+//        if (mostRestrictiveFarHelper != null && mostRestrictiveFarHelper.getType() != null) {
+//           if(DxfFileConstants.A_P.equalsIgnoreCase(mostRestrictiveFarHelper.getType().getCode()) || DxfFileConstants.A_G.equalsIgnoreCase(mostRestrictiveFarHelper.getType().getCode())) {
+//        	   if (DxfFileConstants.A_G.equalsIgnoreCase(mostRestrictiveFarHelper.getType().getCode()) && pl.getUtility().getRainWaterHarvestingTankCapacity().compareTo(expectedTankCapacity) > 0) {
+//                   //addOutput(pl, errors, subRule, subRuleDesc);
+//        		   setReportOutputDetails(pl, subRule, subRuleDesc, null, "Defined in the plan", Result.Verify.getResultVal());
+//               } 
+//        	   else if(DxfFileConstants.A_P.equalsIgnoreCase(mostRestrictiveFarHelper.getType().getCode())) {
+//        		   //addOutput(pl, errors, subRule, subRuleDesc);
+//        		   if(pl.getUtility().getRainWaterHarvestingTankCapacity().compareTo(expectedTankCapacity) > 0)
+//        			   setReportOutputDetails(pl, subRule, subRuleDesc, null, "Defined in the plan", Result.Verify.getResultVal());
+//        		   else
+//        			   setReportOutputDetails(pl, subRule, subRuleDesc, null, "Not Defined in the plan", Result.Verify.getResultVal());
+//        	   }
+//        	   else {
+//                   //addOutput(pl, errors, subRule, subRuleDesc);
+//        		   setReportOutputDetails(pl, subRule, subRuleDesc, null, "Not Defined in the plan",
+//       					Result.Not_Accepted.getResultVal());
+//               }
+//           }
+//        }
+
+		/*
+		 * if (plotArea.compareTo(HUNDRED) >= 0) { validateRWH(pl, errors); if
+		 * (pl.getUtility() != null && !pl.getUtility().getRainWaterHarvest().isEmpty()
+		 * && pl.getUtility().getRainWaterHarvestingTankCapacity() != null) { Boolean
+		 * valid = false; BigDecimal roundOffPlotArea = plotArea.divide(HUNDRED);
+		 * expectedTankCapacity = BigDecimal.valueOf(55000)
+		 * .multiply(roundOffPlotArea.setScale(0, BigDecimal.ROUND_HALF_UP)); if
+		 * (pl.getUtility().getRainWaterHarvestingTankCapacity().compareTo(
+		 * expectedTankCapacity) >= 0) { valid = true; } processRWHTankCapacity(pl, "",
+		 * subRule, subRuleDesc, expectedTankCapacity, valid); } }
+		 */
+		return pl;
+	}
+
+	public  boolean isOccupancyTypeNotApplicable(OccupancyTypeHelper occupancyTypeHelper) {
+		boolean flage = false;
+
+		if (DxfFileConstants.F_SCO.equals(occupancyTypeHelper.getSubtype().getCode())
+				|| DxfFileConstants.F_B.equals(occupancyTypeHelper.getSubtype().getCode())
+				|| DxfFileConstants.F_PP.equals(occupancyTypeHelper.getSubtype().getCode())
+				|| DxfFileConstants.F_CD.equals(occupancyTypeHelper.getSubtype().getCode())
+				|| DxfFileConstants.R1.equals(occupancyTypeHelper.getSubtype().getCode())
+				|| DxfFileConstants.T1.equals(occupancyTypeHelper.getSubtype().getCode()))
+			flage = true;
+
+		return flage;
+	}
+
+	// CGCL END
+
+	private void addOutput(Plan pl, HashMap<String, String> errors, String subRule, String subRuleDesc) {
+		if (pl.getPlanInformation().getRwhDeclared().equalsIgnoreCase(DcrConstants.NO)
+				|| pl.getPlanInformation().getRwhDeclared().equalsIgnoreCase(DcrConstants.NA)) {
+			errors.put(DxfFileConstants.RWH_DECLARED, RWH_DECLARATION_ERROR);
+			pl.addErrors(errors);
+			addReportOutput(pl, subRule, subRuleDesc);
+		} else {
+			addReportOutput(pl, subRule, subRuleDesc);
+		}
+	}
+
+	private void addReportOutput(Plan pl, String subRule, String subRuleDesc) {
+		if (!pl.getUtility().getRainWaterHarvest().isEmpty()) {
+			setReportOutputDetails(pl, subRule, subRuleDesc, null, "Defined in the plan", Result.Verify.getResultVal());
+		} else {
+			setReportOutputDetails(pl, subRule, subRuleDesc, null, "Not Defined in the plan",
+					Result.Not_Accepted.getResultVal());
+		}
+	}
+
+	/*
+	 * private void processRWHTankCapacity(Plan planDetail, String rule, String
+	 * subRule, String subRuleDesc, BigDecimal expectedTankCapacity, Boolean valid)
+	 * { if (expectedTankCapacity.compareTo(BigDecimal.valueOf(0)) > 0) { if (valid)
+	 * { setReportOutputDetails(planDetail, subRule,
+	 * RAINWATER_HARVESTING_TANK_CAPACITY, expectedTankCapacity.toString(),
+	 * planDetail.getUtility().getRainWaterHarvestingTankCapacity().toString(),
+	 * Result.Accepted.getResultVal()); } else { setReportOutputDetails(planDetail,
+	 * subRule, RAINWATER_HARVESTING_TANK_CAPACITY, expectedTankCapacity.toString()
+	 * + IN_LITRE,
+	 * planDetail.getUtility().getRainWaterHarvestingTankCapacity().toString() +
+	 * IN_LITRE, Result.Not_Accepted.getResultVal()); } } }
+	 */
+
+	/*
+	 * private boolean processRWH(Plan planDetail, String rule, String subRule,
+	 * String subRuleDesc) { if
+	 * (!planDetail.getUtility().getRainWaterHarvest().isEmpty()) {
+	 * setReportOutputDetails(planDetail, subRule, subRuleDesc, "",
+	 * OBJECTDEFINED_DESC, Result.Accepted.getResultVal()); return true; } else if
+	 * (planDetail.getUtility().getRainWaterHarvest().isEmpty()) {
+	 * setReportOutputDetails(planDetail, subRule, subRuleDesc, "",
+	 * OBJECTNOTDEFINED_DESC, Result.Not_Accepted.getResultVal()); return true; }
+	 * return false; } private boolean checkOccupancyTypeForRWH(OccupancyType
+	 * occupancyType) { return occupancyType.equals(OccupancyType.OCCUPANCY_A2) ||
+	 * occupancyType.equals(OccupancyType.OCCUPANCY_A3) ||
+	 * occupancyType.equals(OccupancyType.OCCUPANCY_B1) ||
+	 * occupancyType.equals(OccupancyType.OCCUPANCY_B2) ||
+	 * occupancyType.equals(OccupancyType.OCCUPANCY_B3) ||
+	 * occupancyType.equals(OccupancyType.OCCUPANCY_C) ||
+	 * occupancyType.equals(OccupancyType.OCCUPANCY_C1) ||
+	 * occupancyType.equals(OccupancyType.OCCUPANCY_C2) ||
+	 * occupancyType.equals(OccupancyType.OCCUPANCY_C3) ||
+	 * occupancyType.equals(OccupancyType.OCCUPANCY_D) ||
+	 * occupancyType.equals(OccupancyType.OCCUPANCY_D1) ||
+	 * occupancyType.equals(OccupancyType.OCCUPANCY_D2) ||
+	 * occupancyType.equals(OccupancyType.OCCUPANCY_E) ||
+	 * occupancyType.equals(OccupancyType.OCCUPANCY_G1) ||
+	 * occupancyType.equals(OccupancyType.OCCUPANCY_G2) ||
+	 * occupancyType.equals(OccupancyType.OCCUPANCY_I1) ||
+	 * occupancyType.equals(OccupancyType.OCCUPANCY_I2); }
+	 */
+
+	private void setReportOutputDetails(Plan pl, String ruleNo, String ruleDesc, String expected, String actual,
+			String status) {
+		Map<String, String> details = new HashMap<>();
+		details.put(RULE_NO, ruleNo);
+		details.put(DESCRIPTION, ruleDesc);
+		details.put(REQUIRED, expected);
+		details.put(PROVIDED, actual);
+		details.put(STATUS, status);
+		scrutinyDetail.getDetail().add(details);
+		pl.getReportOutput().getScrutinyDetails().add(scrutinyDetail);
+	}
+
+	/*
+	 * private boolean validateRWH(Plan pl, HashMap<String, String> errors) { if
+	 * (pl.getUtility().getRainWaterHarvest().isEmpty()) {
+	 * errors.put(RAINWATER_HARVESTING,
+	 * edcrMessageSource.getMessage(OBJECTNOTDEFINED, new String[] {
+	 * RAINWATER_HARVESTING }, LocaleContextHolder.getLocale()));
+	 * pl.addErrors(errors); return true; } else if
+	 * (!pl.getUtility().getRainWaterHarvest().isEmpty() &&
+	 * pl.getUtility().getRainWaterHarvestingTankCapacity() == null) {
+	 * errors.put(RAINWATER_HARVES_TANKCAPACITY,
+	 * edcrMessageSource.getMessage(OBJECTNOTDEFINED, new String[] {
+	 * RAINWATER_HARVES_TANKCAPACITY }, LocaleContextHolder.getLocale()));
+	 * pl.addErrors(errors); return true; } return false; }
+	 */
+
+	@Override
+	public Map<String, Date> getAmendments() {
+		return new LinkedHashMap<>();
+	}
 }

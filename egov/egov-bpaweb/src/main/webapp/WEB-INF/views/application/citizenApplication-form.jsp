@@ -110,7 +110,7 @@
 							code='lbl.appln.details' /></a></li>
 				<li><a data-toggle="tab" href="#document-info" data-tabidx=1><spring:message
 							code='title.documentdetail' /></a></li>
-				<li><a data-toggle="tab" href="#noc-document-info"
+				<li id="noc-document-tab-link"><a data-toggle="tab" href="#noc-document-info"
 					data-tabidx=2><spring:message code='lbl.noc.doc.details' /></a></li>
 			</ul>
 			<div class="tab-content">
@@ -331,27 +331,21 @@
 
 </div>
 
-<link rel="stylesheet"
-	href="<c:url value='/resources/global/css/bootstrap/bootstrap-tagsinput.css?rnd=${app_release_no}' context='/egi'/>">
-<script
-	src="<c:url value='/resources/global/js/bootstrap/bootstrap-tagsinput.min.js?rnd=${app_release_no}' context='/egi'/>"></script>
-<script
-	src="<c:url value='/resources/global/js/handlebars/handlebars.js?rnd=${app_release_no}' context='/egi'/>"></script>
-<script
-	src="<cdn:url value='/resources/global/js/egov/inbox.js?rnd=${app_release_no}' context='/egi'/>"></script>
-<script
-	src="<c:url value='/resources/global/js/jquery/plugins/select2/4.0.3/select2.min.js?rnd=${app_release_no}' context='/egi'/>"></script>
-<script
-	src="<cdn:url value='/resources/js/app/bpa-ajax-helper.js?rnd=${app_release_no}'/>"></script>
-<script
-	src="<cdn:url value='/resources/js/app/documentsuploadvalidation.js?rnd=${app_release_no}'/>"></script>
-<script
-	src="<cdn:url value='/resources/js/app/buildingarea-details.js?rnd=${app_release_no}'/>"></script>
-<script
-	src="<cdn:url value='/resources/js/app/bpa-application-validations.js?rnd=${app_release_no}'/>"></script>
-<script
-	src="<cdn:url value='/resources/js/app/citizen-helper.js?rnd=${app_release_no}'/>"></script>
-<script
-	src="<cdn:url value='/resources/js/app/applicant-helper.js?rnd=${app_release_no}'/>"></script>
-<script
-	src="<cdn:url value='/resources/js/app/edcr-helper.js?rnd=${app_release_no}'/>"></script>
+<link rel="stylesheet" href="<c:url value='/resources/global/css/bootstrap/bootstrap-tagsinput.css?rnd=${app_release_no}' context='/egi'/>">
+<script src="<c:url value='/resources/global/js/bootstrap/bootstrap-tagsinput.min.js?rnd=${app_release_no}' context='/egi'/>"></script>
+<script src="<c:url value='/resources/global/js/handlebars/handlebars.js?rnd=${app_release_no}' context='/egi'/>"></script>
+<script src="<cdn:url value='/resources/global/js/egov/inbox.js?rnd=${app_release_no}' context='/egi'/>"></script>
+<script src="<c:url value='/resources/global/js/jquery/plugins/select2/4.0.3/select2.min.js?rnd=${app_release_no}' context='/egi'/>"></script>
+<script src="<cdn:url value='/resources/js/app/bpa-ajax-helper.js?rnd=${app_release_no}'/>"></script>
+<script src="<cdn:url value='/resources/js/app/documentsuploadvalidation.js?rnd=${app_release_no}'/>"></script>
+<script src="<cdn:url value='/resources/js/app/buildingarea-details.js?rnd=${app_release_no}'/>"></script>
+<script src="<cdn:url value='/resources/js/app/bpa-application-validations.js?rnd=${app_release_no}'/>"></script>
+<script src="<cdn:url value='/resources/js/app/citizen-helper.js?rnd=${app_release_no}'/>"></script>
+<script src="<cdn:url value='/resources/js/app/applicant-helper.js?rnd=${app_release_no}'/>"></script>
+<script src="<cdn:url value='/resources/js/app/edcr-helper.js?rnd=${app_release_no}'/>"></script>
+	
+<script>
+	$(document).ready(function() {
+	    $('#applicationType').removeAttr("disabled");
+	});
+</script>

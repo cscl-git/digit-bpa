@@ -65,13 +65,13 @@
 	<jsp:include page="view-amenities-details.jsp"></jsp:include>
 
 	<div class="row add-border">
-		<div class="col-sm-3 add-margin">
+		<%-- <div class="col-sm-3 add-margin">
 			<spring:message code="lbl.re.survey" />
 		</div>
 		<div class="col-sm-3 add-margin view-content text-justify">
 			<c:out value="${bpaApplication.siteDetail[0].reSurveyNumber}"
 				default="N/A"></c:out>
-		</div>
+		</div> --%>
 		<div class="col-sm-3 add-margin">
 			<spring:message code="lbl.nature.of.ownership" />
 		</div>
@@ -89,13 +89,13 @@
 			<c:out value="${bpaApplication.siteDetail[0].khataNumber}"
 				default="N/A"></c:out>
 		</div>
-		<div class="col-sm-3 add-margin">
+		<%-- <div class="col-sm-3 add-margin">
 			<spring:message code="lbl.holding.no" />
 		</div>
 		<div class="col-sm-3 add-margin view-content text-justify">
 			<c:out value="${bpaApplication.siteDetail[0].holdingNumber}"
 				default="N/A"></c:out>
-		</div>
+		</div> --%>
 	</div>
 	
 
@@ -136,19 +136,19 @@
 
 	<div class="row add-border">
 		<div class="col-sm-3 add-margin">
-			<spring:message code="lbl.street.address1" />
+			<spring:message code="lbl.street.address" />
 		</div>
 		<div class="col-sm-3 add-margin view-content text-justify">
 			<c:out value="${bpaApplication.siteDetail[0].streetaddress1}"
 				default="N/A"></c:out>
 		</div>
-		<div class="col-sm-3 add-margin">
+		<%-- <div class="col-sm-3 add-margin">
 			<spring:message code="lbl.street.address2" />
 		</div>
 		<div class="col-sm-3 add-margin view-content text-justify">
 			<c:out value="${bpaApplication.siteDetail[0].streetaddress2}"
 				default="N/A"></c:out>
-		</div>
+		</div> --%>
 	</div>
 
 	<div class="row add-border">
@@ -225,7 +225,7 @@
 		</div>
 	</div> --%>
 
-	<div class="row add-border">
+	<%-- <div class="row add-border">
 		<div class="col-sm-3 add-margin">
 			<spring:message code="lbl.town.plan.zone" />
 		</div>
@@ -240,7 +240,7 @@
 			<c:out value="${bpaApplication.siteDetail[0].landUsage.description}"
 				default="N/A"></c:out>
 		</div>
-	</div>
+	</div> --%>
 	<div class="row add-border">
 		<div class="col-sm-3 add-margin">
 			<spring:message code="lbl.previousowner.details" />
@@ -257,7 +257,7 @@
 				default="N/A"></c:out>
 		</div>
 	</div>
-	<div class="row add-border">
+	<%-- <div class="row add-border">
 		<div class="col-sm-3 add-margin">
 			<spring:message code="lbl.charitable.trust" />
 		</div>
@@ -273,8 +273,8 @@
 				value="${bpaApplication.siteDetail[0].affordableHousingScheme ? 'YES' : 'NO'}"
 				default="N/A"></c:out>
 		</div>
-	</div>
-	<div class="row add-border">
+	</div> --%>
+	<%-- <div class="row add-border">
 		<div class="col-sm-3 add-margin">
 			<spring:message code="lbl.government.type" />
 		</div>
@@ -294,7 +294,7 @@
 					default="N/A"></c:out>
 			</div>
 		</div>
-	</div>
+	</div> --%>
 	
 	<div class="row add-border">
 		<div class="col-sm-3 add-margin">

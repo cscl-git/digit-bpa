@@ -80,6 +80,15 @@ public class OccupancyService {
     public List<Occupancy> findAllOrderByOrderNumber() {
         return occupancyRepository.findAll(new Sort(Sort.Direction.ASC, "orderNumber"));
     }
+    
+    public List<SubOccupancy> findSubOccupancyByOccupancy(final String occupancyName){
+    	Occupancy occupancy = occupancyRepository.findByName(occupancyName);
+    	 List<SubOccupancy> list = new ArrayList<SubOccupancy>();
+    	if(occupancy!=null) {
+    		list = subOccupancyRepository.findByOccupancyAndIsActiveTrueOrderByOrderNumberAsc(occupancy);
+    	}
+    	return list;
+    }
 
     public List<Usage> findSubUsagesByOccupancy(final String occupancyName) {
         Occupancy occupancy = occupancyRepository.findByName(occupancyName);
@@ -100,6 +109,18 @@ public class OccupancyService {
                         .findBySubOccupancyAndIsActiveTrueOrderByOrderNumberAsc(subOccupancy);
                 usagesList.addAll(usages);
             }
+        }
+
+        return usagesList;
+    }
+    
+    public List<Usage> findSubUsagesBySubOccupancy(final String subOccupancyName) {
+    	SubOccupancy subOccupancy = subOccupancyRepository.findByName(subOccupancyName);
+        List<Usage> usagesList = new ArrayList<>();
+        if (subOccupancy != null) {                
+            List<Usage> usages = usagesRepository
+                    .findBySubOccupancyAndIsActiveTrueOrderByOrderNumberAsc(subOccupancy);
+            usagesList.addAll(usages);
         }
 
         return usagesList;

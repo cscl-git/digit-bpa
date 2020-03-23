@@ -116,6 +116,7 @@ import org.egov.bpa.utils.BpaConstants;
 import org.egov.bpa.utils.BpaUtils;
 import org.egov.common.entity.bpa.SubOccupancy;
 import org.egov.common.entity.bpa.Usage;
+import org.egov.common.entity.dcr.helper.EdcrApplicationInfo;
 import org.egov.commons.Installment;
 import org.egov.dcb.bean.Receipt;
 import org.egov.demand.model.EgDemandDetails;
@@ -143,6 +144,8 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 @Service
 @Transactional(readOnly = true)
@@ -172,6 +175,12 @@ public class BpaNoticeUtil {
     private static final String MERGE_PM_EDCR_ENABLED = "MERGEPERMITEDCR";
     private static final String MODULE_NAME = "BPA";
     public static final String SECTION_CLERK = "SECTION CLERK";
+    
+    public static final String PLOT_NO = "PLOT_NUMBER";
+	public static final String ZONE = "ZONE";
+	public static final String ROOT_BOUNDARY_TYPE = "ROOT_BOUNDARY_TYPE";
+	public static final String SECTOR_NUMBER = "SECTOR_NUMBER";
+	public static final String PLOT_TYPE = "PLOT_TYPE";
 
     @Autowired
     @Qualifier("fileStoreService")
@@ -311,12 +320,31 @@ public class BpaNoticeUtil {
 
     public Map<String, Object> getUlbDetails() {
         final Map<String, Object> ulbDetailsReportParams = new HashMap<>();
-        ulbDetailsReportParams.put("cityName", ApplicationThreadLocals.getCityName());
-        ulbDetailsReportParams.put("logoPath", cityService.getCityLogoAsStream());
+       // ulbDetailsReportParams.put("cityName", ApplicationThreadLocals.getCityName());
+        ulbDetailsReportParams.put("cityName", "Chandigarh Administration");
+         ulbDetailsReportParams.put("logoPath", cityService.getCityLogoAsStream());
         ulbDetailsReportParams.put("ulbName", ApplicationThreadLocals.getMunicipalityName());
         ulbDetailsReportParams.put("ulbGrade", cityService.getCityGrade());
         ulbDetailsReportParams.put("cityNameLocal", ApplicationThreadLocals.getCityNameLocal());
         return ulbDetailsReportParams;
+    }
+    
+    @Autowired
+    private DcrRestService drcRestService;
+    
+    private Map<String, String> getPlanInfo(String ocEdcrNumber){
+    	Map<String, String> map=new HashMap<String, String>();
+    	try {
+    		EdcrApplicationInfo odcrPlanInfo = drcRestService.getDcrPlanInfo(ocEdcrNumber,
+                    ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest());
+        	
+        	
+        	if(odcrPlanInfo!=null && odcrPlanInfo.getPlan()!=null)
+        		map= odcrPlanInfo.getPlan().getPlanInfoProperties();
+    	}catch (Exception e) {
+			// TODO: handle exception
+		}
+    	return map;
     }
 
     public Map<String, Object> buildParametersForReport(final BpaApplication bpaApplication) {
@@ -375,6 +403,7 @@ public class BpaNoticeUtil {
         reportParams.put("buildingPermitNumber",
                 bpaApplication.getPlanPermissionNumber() == null ? EMPTY : bpaApplication.getPlanPermissionNumber());
         reportParams.put("applicantName", bpaApplication.getApplicantName());
+        reportParams.put("architectName", bpaApplication.getArchitectName());
         reportParams.put("applicantAddress",
                 bpaApplication.getOwner() == null ? "Not Mentioned" : bpaApplication.getOwner().getAddress());
         Boolean serviceEnabled = getEdcrRequiredServices().contains(bpaApplication.getServiceType().getCode());
@@ -400,6 +429,22 @@ public class BpaNoticeUtil {
         reportParams.put("serviceTypeForDmd", bpaApplication.getServiceType().getDescription());
         reportParams.put("amenities", StringUtils.isBlank(amenities) ? "N/A" : amenities);
         reportParams.put("occupancy", bpaApplication.getOccupanciesName());
+        
+        //change start
+        
+        Map<String, String> planInfo=getPlanInfo(bpaApplication.geteDcrNumber());
+        if(planInfo!=null)
+        reportParams.put("plotNo", planInfo.get(PLOT_NO) == null
+                ? EMPTY
+                :  planInfo.get(PLOT_NO));
+        
+        reportParams.put("sectorNo", planInfo.get(SECTOR_NUMBER) == null
+                ? EMPTY
+                :  planInfo.get(SECTOR_NUMBER));
+        
+        //change end
+        
+        
         if (!bpaApplication.getSiteDetail().isEmpty()) {
             reportParams.put("electionWard", bpaApplication.getSiteDetail().get(0).getElectionBoundary() != null
                     ? bpaApplication.getSiteDetail().get(0).getElectionBoundary().getName()
@@ -465,8 +510,9 @@ public class BpaNoticeUtil {
         if (!bpaApplication.getPermitFee().isEmpty())
             reportParams.put("permitFeeDetails", getPermitFeeDetails(bpaApplication));
 
-        reportParams.put("cityName", ApplicationThreadLocals.getCityName());
-        String imageURL = ReportUtil.getImageURL(BpaConstants.STATE_LOGO_PATH);
+     //   reportParams.put("cityName", ApplicationThreadLocals.getCityName());
+        reportParams.put("cityName", "Chandigarh Administration");
+         String imageURL = ReportUtil.getImageURL(BpaConstants.STATE_LOGO_PATH);
         reportParams.put("stateLogo", imageURL);
         if (bpaApplication.getExistingBuildingDetails() != null && !bpaApplication.getExistingBuildingDetails().isEmpty()) {
             Map<String, BigDecimal> exstArea = BpaUtils.getTotalExstArea(bpaApplication.getExistingBuildingDetails());

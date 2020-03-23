@@ -225,7 +225,7 @@
     </div>
     <footer class="main">
 
-        Powered by <a href="http://eGovernments.org" target="_blank">eGovernments Foundation</a>
+        <!-- Powered by <a href="http://eGovernments.org" target="_blank">eGovernments Foundation</a> -->
 
     </footer>
 </div>

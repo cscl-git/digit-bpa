@@ -104,5 +104,5 @@ public class Balcony extends Measurement {
     public void setWidths(List<BigDecimal> widths) {
         this.widths = widths;
     }
-
+    
 }

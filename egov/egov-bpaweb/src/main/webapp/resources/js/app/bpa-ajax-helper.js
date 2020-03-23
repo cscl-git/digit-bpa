@@ -202,6 +202,7 @@ $(document).ready(
 				$.each($("#applicationAmenity option:selected"), function(idx){     
 					servicesAndAmenities.push($(this).val());
 				});
+				var dcrNumber = $('#eDcrNumber').val();
 				applicationTypeId = $('#applicationType').val();
 				if($('#permitApplnFeeRequired').val() == 'true'){
 				$.ajax({
@@ -210,7 +211,8 @@ $(document).ready(
 					contentType: 'application/json; charset=UTF-8',
 					data : {
 						"serviceTypeIds" : servicesAndAmenities.join(","),
-						"applicationTypeId" : applicationTypeId
+						"applicationTypeId" : applicationTypeId,
+						"edcrNumber":dcrNumber
 					},
 					cache : false,
 					dataType: "json",

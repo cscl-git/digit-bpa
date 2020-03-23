@@ -218,21 +218,21 @@ public class BpaAjaxController {
     @GetMapping(value = "/ajax/getAdmissionFees", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
     public BigDecimal getApplicationFee(@RequestParam final Long[] serviceTypeIds,
-            @RequestParam final Long applicationTypeId) {
+            @RequestParam final Long applicationTypeId, @RequestParam final String edcrNumber) {
         BigDecimal amount = BigDecimal.ZERO;
         if (serviceTypeIds.length > 0) {
             ApplicationBpaFeeCalculation feeCalculation = (ApplicationBpaFeeCalculation) specificNoticeService
                     .find(PermitFeeCalculationService.class, specificNoticeService.getCityDetails());
-            amount = amount.add(feeCalculation.calculateAdmissionFeeAmount(Arrays.asList(serviceTypeIds), applicationTypeId));
+            amount = amount.add(feeCalculation.calculateAdmissionFeeAmount(applicationTypeId, edcrNumber));
         }
         return amount;
     }
 
     @GetMapping(value = "/ajax/getApplicationType", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
-    public ApplicationSubType getApplicationType(final BigDecimal height, @RequestParam final BigDecimal plotArea,
-            @RequestParam String occupancy) {
-        return bpaUtils.getBuildingType(height, plotArea, occupancy);
+    public ApplicationSubType getApplicationType(@RequestParam String plotType,
+            @RequestParam String rootBoundaryType) {
+        return bpaUtils.getApplicationType(plotType, rootBoundaryType);
     }
 
     @GetMapping(value = "/bpaajaxWorkFlow-getDesignationsByObjectTypeAndDesignation", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -516,6 +516,12 @@ public class BpaAjaxController {
     @ResponseBody
     public List<Usage> getSubUsagesByOccupancy(@RequestParam String occupancy) {
         return occupancyService.findSubUsagesByOccupancy(occupancy);
+    }
+    
+    @GetMapping(value = "/sub-occupancy/sub-usages", produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public List<Usage> getSubUsagesBySubOccupancy(@RequestParam String subOccupancy) {
+        return occupancyService.findSubUsagesBySubOccupancy(subOccupancy);
     }
 
     @GetMapping(value = "/application/findby-permit-number", produces = MediaType.APPLICATION_JSON_VALUE)

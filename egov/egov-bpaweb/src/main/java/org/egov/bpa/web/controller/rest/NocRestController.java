@@ -71,7 +71,7 @@ public class NocRestController {
 
     @GetMapping(value = "/aai/application", produces = MediaType.APPLICATION_XML_VALUE)
     public String fetchInitiatedAAIApplications() {
-    	List<PermitNocApplication> aaiApplications = permitNocService.findInitiatedAppByType(BpaConstants.AIRPORTNOCTYPE);    	
+    	List<PermitNocApplication> aaiApplications = permitNocService.findInitiatedAppByType(BpaConstants.PH7NOCTYPE);    	
 		return nocRestService.buildAirportApplicationDetails(aaiApplications);    
     }
 }
